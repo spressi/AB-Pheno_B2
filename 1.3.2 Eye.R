@@ -571,10 +571,6 @@ messages = "Messages.txt" %>% paste0(path.eye, .) %>%
 
 #messages %>% count(subject) %>% filter(n != trials.N)
 messages %>% count(subject) %>% filter(n != trials.N, subject %in% {behavior.overview %>% filter(noET %>% is.na() == F) %>% pull(subject)} == F)
-#a07: no 2nd block (known from other variables)
-#problem resolved: [a19: last 1 trial  of 1st block missing (but not in reaction times)]
-#problem resolved: [b04: last 4 trials of 2nd block missing (but not in reaction times)]
-#a19 & b04 amended by writing messages that occur without eye-tracking data (eyes were missing for so long such that the eye-tracker went into standby)
 #View(messages %>% filter(subject %in% {messages %>% count(subject) %>% filter(n != trials.N) %>% pull(subject) %>% setdiff(behavior.overview %>% filter(noET %>% is.na() == F) %>% pull(subject))}), "messageCheck")
 #all missings were manually compared against sequence files to assure trial number is correct
 
@@ -615,6 +611,17 @@ fixations.distractors = fixations %>%
 #fixations.valid %>% filter(response %>% is.na()) %>% select(subject, trial) %>% unique()
 #fixations.valid %>% filter(angry %>% is.na() | congruency %>% is.na()) %>% select(subject, trial, congruency, angry, response_dual) %>% unique() %>% print(n = nrow(.))
 
+
+# Overall Check -----------------------------------------------------------
+fixations %>% select(subject, trial) %>% unique() %>% count(subject)
+fixations %>% summarize(.by = subject, min = min(trial), max = max(trial), n = max - min + 1)
+fixations %>% mutate(dur = end - start) %>% 
+  summarize(.by = c(subject, trial), fixTime = sum(dur)/max(end)) %>% 
+  summarize(.by = subject, 
+            fixTime.m = mean(fixTime),
+            fixTime.sd = sd(fixTime),
+            fixTime.min = min(fixTime),
+            fixTime.max = max(fixTime))
 
 # Valid Fixations ---------------------------------------------------------
 vpn.eye = fixations.distractors %>% pull(subject) %>% unique() %>% setdiff(exclusions.eye) %>% sort()

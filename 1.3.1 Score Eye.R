@@ -230,8 +230,8 @@ write.table(allsactab,paste(path.eye,"Saccades.txt",sep=""),sep="\t",dec=",",quo
 
 
 # Check Eye Calib ---------------------------------------------------------
-read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/Summary", .), "Fixations.txt"), locale = locale(decimal_mark = ",")) %>% 
-  left_join(read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/Summary", .), "Messages.txt"), locale = locale(decimal_mark = ",")), by = c("RECORDING_SESSION_LABEL", "TRIAL_LABEL")) %>% 
+read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/calib/Summary", .), "Fixations.txt"), locale = locale(decimal_mark = ",")) %>% 
+  left_join(read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/calib/Summary", .), "Messages.txt"), locale = locale(decimal_mark = ",")), by = c("RECORDING_SESSION_LABEL", "TRIAL_LABEL")) %>% 
   separate(CURRENT_MSG_TEXT, c("distractL", "targetL", NA, "distractR", "targetR"), sep = " ") %>% 
   mutate(angry = if_else(distractL %>% grepl("category1", .), "left", "right"),
          targetSide = if_else(targetL=="NA", "right", "left"),
