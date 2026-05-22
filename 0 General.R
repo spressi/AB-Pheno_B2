@@ -8,16 +8,17 @@ hz.eeg = 500
 hz.et = 250
 
 prestim = 1000
-poststim = c(100, 500) #SOA
+poststim = seq(from = 100, to = 500, length.out = 18) %>% round() #SOA
 targetTime = 1500
+iti.range = c(1009, 1509)
 
 expoID = "*" #all messages are beginning of trial
 
 # Paths -------------------------------------------------------------------
-path = "C:/Data/AB_B1/Data/" #@work
+path = "C:/Data/AB_B2/Data/" #@work
 #path = path %>% gsub("C:/Data", "D:/Arbeit", .) #@home
 
-path.que = "questionnaires/data_ab-pheno_b1.csv" %>% paste0(path, .)
+path.que = "questionnaires/data_ab-pheno_b2.csv" %>% paste0(path, .)
 path.behav = "log/" %>% paste0(path, .)
 path.seq = "../sequences/" %>% paste0(path, .)
 
