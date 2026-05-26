@@ -8,7 +8,7 @@ hz.eeg = 500
 hz.et = 250
 
 prestim = 1000
-poststim = seq(from = 100, to = 500, length.out = 18) %>% round() #SOA
+poststim = c(100, 116, 150, 166, 200, 216, 233, 266, 283, 316, 333, 366, 383, 400, 433, 450, 483, 500)
 targetTime = 1500
 iti.range = c(1009, 1509)
 
