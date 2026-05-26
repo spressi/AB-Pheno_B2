@@ -2,8 +2,10 @@ library(tidyverse)
 #source("0 General.R")
 #source("1.1 Behavior.R")
 
-writeCorrectedMarkers = F #rewrite marker file for subjects with inverted markers (low voltage = signal instead of high)
-markers.n = trials.N*3 #TODO add extra markers (block & EOG calibration)
+markers.n = trials.N*3 + # 3 triggers per trial (distractors, target, response)
+  4 #start & end triggers for each block
+  #6 + 2 #EOG calibration: 6 positions (2x middle, top, right, bottom, left) + start & end triggers
+
 #TODO adjust computations by extra markers! save number in separate variable?
 
 files.eeg.markers = list.files(path.eeg.raw, pattern = ".vmrk", full.names = T) %>% 
@@ -35,28 +37,3 @@ eeg.markers.breaks = eeg.markers %>%
             )
 eeg.markers.breaks %>% filter(breaks != 1 | breakIndex != markers.n/2 | n != markers.n) #3 markers per trial (distractors, target, & response) => break should be at trials.N * 3 / 2
 #break always after 576th marker
-
-
-# Write Files -------------------------------------------------------------
-if (writeCorrectedMarkers) {
-  markerFilesToWrite = c(invertedMarkers, eeg.markers %>% pull(subject) %>% unique() %>% Filter(\(x) x %>% str_starts("b"), .)) %>% unique() %>% sort()
-  for (s in markerFilesToWrite) {
-    #s = sample(markerFilesToWrite, 1) #for testing
-    filename = files.eeg.markers %>% Filter(\(x) x %>% grepl(s, .), .)
-    filename.copy = filename %>% gsub(".vmrk", "_original.vmrk", ., fixed = T)
-    if (file.exists(filename.copy)) {
-      message(paste0(s, ": Original file already exists. Skipping creation of adjusted marker file."))
-      next
-    }
-    
-    if (file.exists(filename.copy)==F) #careful! there is no option that prevents file.rename from overwriting an existing file => check yourself
-      file.rename(filename, filename.copy) #this retains "last modified" as the original file creation date
-    
-    file = readLines(filename.copy)
-    #file[12] #assert that line 12 is the last line that should remain unmodified: Mk1=New Segment
-    file = c(file[1:12],
-             eeg.markers %>% filter(subject == s) %>% pull(output))
-    writeLines(file, filename)
-    cat(paste0(s, ": Adjusted marker file created."))
-  }
-}
