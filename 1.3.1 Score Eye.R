@@ -229,7 +229,6 @@ write.table(allsactab,paste(path.eye,"Saccades.txt",sep=""),sep="\t",dec=",",quo
 # Check Eye Calib ---------------------------------------------------------
 read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/calib/Summary", .), "Fixations.txt"), locale = locale(decimal_mark = ",")) %>% 
   left_join(read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/calib/Summary", .), "Messages.txt"), locale = locale(decimal_mark = ",")), by = c("RECORDING_SESSION_LABEL", "TRIAL_LABEL")) %>% 
-  
   mutate(CURRENT_MSG_TEXT = CURRENT_MSG_TEXT %>% str_extract("Grid_\\d+_\\d+"),
          start = CURRENT_FIX_START - CURRENT_MSG_TIME,
          start = if_else(start < 0, 0, start),
