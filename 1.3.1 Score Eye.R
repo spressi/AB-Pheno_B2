@@ -33,11 +33,12 @@
 library(tidyverse)
 #source("0 General.R")
 distance = 650 #screen center to subject eyes in mm
-screen.width.mm = 520 #screen width in mm
+#monitor: Dell U2412M
+screen.width.mm = 518.4 #screen width in mm
 screen.width.px = 1920 #screen width in pixels
 screen.height.px = 1200 #screen height in pixels (only for plot)
 
-options(warn=2)  # Halt on warnings
+#options(warn=2)  # Halt on warnings
 
 helpers.dir = "eyeScoring/"
 source(paste0(helpers.dir, "eventdetection_lowspeed.R"))
@@ -62,10 +63,6 @@ if (exists("allfixtab")) rm("allfixtab"); if (exists("allsactab")) rm("allsactab
 for (vp in vpn) {
   #vp = head(vpn, 1)
   #vp = sample(vpn, 1)
-  
-  #vp = vpn %>% Filter(\(x) {x %>% grepl("a05_2", .)}, .)
-  #vp = vpn %>% Filter(\(x) {x %>% grepl("a19_2", .)}, .) #problem resolved
-  #vp = vpn %>% Filter(\(x) {x %>% grepl("b04_2", .)}, .) #problem resolved
   
   code <- vp %>% pathToCode(file.ext = " ")
   print(code)
@@ -232,26 +229,23 @@ write.table(allsactab,paste(path.eye,"Saccades.txt",sep=""),sep="\t",dec=",",quo
 # Check Eye Calib ---------------------------------------------------------
 read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/calib/Summary", .), "Fixations.txt"), locale = locale(decimal_mark = ",")) %>% 
   left_join(read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/calib/Summary", .), "Messages.txt"), locale = locale(decimal_mark = ",")), by = c("RECORDING_SESSION_LABEL", "TRIAL_LABEL")) %>% 
-  separate(CURRENT_MSG_TEXT, c("distractL", "targetL", NA, "distractR", "targetR"), sep = " ") %>% 
-  mutate(angry = if_else(distractL %>% grepl("category1", .), "left", "right"),
-         targetSide = if_else(targetL=="NA", "right", "left"),
-         congruency = if_else(angry==targetSide, "congruent", "incongruent"),
-         targetKind = if_else(targetSide=="left", targetL, targetR)) %>% 
-  #select(-(1:7)) %>% unique() #for checking
-  mutate(start = CURRENT_FIX_START - CURRENT_MSG_TIME,
+  
+  mutate(CURRENT_MSG_TEXT = CURRENT_MSG_TEXT %>% str_extract("Grid_\\d+_\\d+"),
+         start = CURRENT_FIX_START - CURRENT_MSG_TIME,
          start = if_else(start < 0, 0, start),
          end = CURRENT_FIX_END - CURRENT_MSG_TIME,
          end = if_else(end < 0, 0, end),
          dur = end - start) %>% 
   filter(dur > 0) %>% 
   rename(subject = RECORDING_SESSION_LABEL) %>% 
-  ggplot(aes(x = CURRENT_FIX_X, y = CURRENT_FIX_Y, color = subject, size = dur)) +
+  #mutate(fixnum = 1:n(), firstfix = fixnum == 1, .by = c(subject, CURRENT_MSG_TEXT)) %>% 
+  #filter(dur == max(dur), .by = c(subject, CURRENT_MSG_TEXT)) %>% 
+  ggplot(aes(x = CURRENT_FIX_X, y = CURRENT_FIX_Y, color = CURRENT_MSG_TEXT, shape = subject, size = dur)) +
   geom_rect(color="black", fill=NA, xmin = 0, xmax = screen.width.px, ymin = 0, ymax = screen.height.px, inherit.aes = F) +
-  geom_path(aes(group = interaction(subject, TRIAL_LABEL)), size=1, alpha = .125) +
-  geom_point(alpha = .25) + 
-  scale_color_viridis_d() + myGgTheme
-
-
+  geom_path(aes(group = interaction(subject, TRIAL_LABEL)), linewidth=1, alpha = .25) +
+  geom_point(alpha = .5) + 
+  scale_color_viridis_d() + coord_fixed(ratio = 1) + myGgTheme
+  
 # Check Fixations ---------------------------------------------------------
 read_tsv(paste0(path.eye, "Fixations.txt"), locale = locale(decimal_mark = ",")) %>% 
   left_join(read_tsv(paste0(path.eye, "Messages.txt"), locale = locale(decimal_mark = ",")), by = c("RECORDING_SESSION_LABEL", "TRIAL_LABEL")) %>% 
@@ -273,4 +267,4 @@ read_tsv(paste0(path.eye, "Fixations.txt"), locale = locale(decimal_mark = ","))
   geom_rect(color="black", fill=NA, xmin = 0, xmax = screen.width.px, ymin = 0, ymax = screen.height.px, inherit.aes = F) +
   #geom_path(aes(group = interaction(subject, TRIAL_LABEL)), size=1, alpha = .125) +
   geom_point(alpha = 1/2^6) + guides(color = "none") +
-  scale_color_viridis_d() + myGgTheme
+  coord_fixed(ratio = 1) + scale_color_viridis_d() + myGgTheme
