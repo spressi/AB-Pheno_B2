@@ -6,6 +6,8 @@ trials.N = 576
 trials.N.block = trials.N/2
 hz.eeg = 500
 hz.et = 250
+hz.screen = 59.95
+screen.ms = 1000 / hz.screen
 
 prestim = 1000
 poststim = c(100, 116, 150, 166, 200, 216, 233, 266, 283, 316, 333, 366, 383, 400, 433, 450, 483, 500)

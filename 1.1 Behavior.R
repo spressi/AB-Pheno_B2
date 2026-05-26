@@ -146,18 +146,12 @@ behavior %>% summarize(.by = c(subject, paradigm),
   summarize(.by = paradigm, across(starts_with("missing_"), list(m = mean, sd = sd)))
 
 
-#design
-behavior %>% count(paradigm, SOA, congruency, angry, target, targetKind)
-  summarize(.by = paradigm,
-                       SOA = mean(SOA == 100, na.rm=T),
-                       congruency = mean(congruency == "angry", na.rm=T),
-                       angry = mean(angry == "left", na.rm=T),
-                       target = mean(target == "left", na.rm=T),
-                       targetKind = mean(targetKind == ":", na.rm=T))
-
 #stimulus presentation
-behavior %>% mutate(expositionCheck = round(expositionCheck)) %>% count(expositionCheck) %>% filter(expositionCheck %in% poststim == F)
-#frameskip because SOA conditions must be a multiple of monitor refresh rate!
+behavior %>% mutate(expositionCheck = round(expositionCheck)) %>% count(SOA, expositionCheck) #%>% filter(expositionCheck %in% poststim == F)
+frameSkip = behavior %>% select(subject, block:rt, SOA, expositionCheck) %>% 
+  mutate(diff = expositionCheck - SOA) %>% pull(diff) %>% {. / screen.ms}
+hist(frameSkip); summary(frameSkip)
+#at least 1 frame is skipped, rarely 2
 
 #behavior %>% pull(expositionCheck) %>% hist()
 #behavior %>% pull(expositionCheck) %>% unique() %>% sort()
