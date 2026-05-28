@@ -1,4 +1,5 @@
 library(tidyverse)
+library(DescTools) #for Winsorize
 
 exclusions = c()
 
@@ -36,6 +37,12 @@ path.rds = "" #project root directory
 # Functions ---------------------------------------------------------------
 checkContent = function(df, col, print=T) {
   result = df %>% count(!!rlang::ensym(col), .drop=F) %>% arrange(desc(n))
+Winsorize.z = function(x, z = c(-2, 2), ...) {
+  low = mean(x, na.rm=T) + sd(x, na.rm=T) * min(z)
+  high = mean(x, na.rm=T) + sd(x, na.rm=T) * max(z)
+  DescTools::Winsorize(x, val = c(low, high), ...)
+}
+
   if (print) {
     result %>% print(n = nrow(.))
     return(invisible(result))
