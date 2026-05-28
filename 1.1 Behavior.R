@@ -119,6 +119,7 @@ sequences = sequences %>% separate(subject, c("subject", "block")) %>%
   relocate(subject, paradigm, block, trial, condition, angry, SOA, contains("target"), iti)
 #sequences %>% filter(paradigm %>% is.na() | angry %>% is.na())
 sequences %>% select(SOA, angry, condition) %>% unique() %>% arrange(condition)
+sequences %>% pull(conditionTarget) %>% unique() %>% as.integer() %>% sort()
   
 #replace SOA from expositionCheck with SOA from sequence file
 #behavior %>% left_join(sequences %>% select(subject, block, trial, SOA2 = SOA, iti)) %>% filter(SOA != SOA2)
