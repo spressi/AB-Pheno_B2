@@ -35,14 +35,45 @@ path.rds = "" #project root directory
 
 
 # Functions ---------------------------------------------------------------
-checkContent = function(df, col, print=T) {
-  result = df %>% count(!!rlang::ensym(col), .drop=F) %>% arrange(desc(n))
+#preprocessing
+pathToCode = function(path, path.sep="/", file.ext="\\.") {
+  first = path %>% gregexpr(path.sep, .) %>% lapply(max) %>% unlist() %>% {. + 1} %>% 
+    pmax(1, .) #if first not found, set it to start of string
+  last = path %>% gregexpr(file.ext, .) %>% lapply(max) %>% unlist() %>% {. - 1}
+  last = ifelse(last < 1, sapply(path, str_length), last) #if last cannot be found, set it to end of string
+  return(path %>% substring(first, last))
+}
+
 Winsorize.z = function(x, z = c(-2, 2), ...) {
   low = mean(x, na.rm=T) + sd(x, na.rm=T) * min(z)
   high = mean(x, na.rm=T) + sd(x, na.rm=T) * max(z)
   DescTools::Winsorize(x, val = c(low, high), ...)
 }
 
+#descriptives
+checkContent = function(df, col, p.denominator=NA, print=T) {
+  #symbol handling
+  if (suppressWarnings(is.na(rlang::enexpr(p.denominator)) == F) && #p.denominator=NA
+      exists(rlang::enexpr(p.denominator)) == F && #not a variable in global environment
+      rlang::enexpr(p.denominator) %>% rlang::is_symbol()) { #column name passed without quotation
+    p.denominator = rlang::ensym(p.denominator) %>% as.character() #cast column name to character for further evaluation
+  }
+  
+  #type handling
+  if (p.denominator %>% is.na() == F) { #not NA (for sum(n))
+    if (p.denominator %>% is.numeric() == F) { #not numeric => must be a column name
+      if (p.denominator %>% match(df %>% colnames()) %>% is.na()) {
+        stop(paste(p.denominator, ": Column not found in data frame"))
+      } else {
+        p.denominator = df %>% pull(!!p.denominator) %>% unique() %>% length()
+      }
+    }
+  }
+  
+  #if (p.denominator %>% is.na() == F && p.denominator %>% is.numeric() == F) warning("p.denominator not numeric. Using sum(n).")
+  result = df %>% count(!!rlang::ensym(col), .drop=F) %>% 
+    arrange(desc(n)) %>% 
+    mutate(p = n / if_else(p.denominator %>% is.numeric(), p.denominator, sum(n)))
   if (print) {
     result %>% print(n = nrow(.))
     return(invisible(result))
@@ -52,18 +83,11 @@ Winsorize.z = function(x, z = c(-2, 2), ...) {
 
 descriptives.list = list(m = mean, sd = sd, min = min, max = max)
 
-pathToCode = function(path, path.sep="/", file.ext="\\.") {
-  first = path %>% gregexpr(path.sep, .) %>% lapply(max) %>% unlist() %>% {. + 1} %>% 
-    pmax(1, .) #if first not found, set it to start of string
-  last = path %>% gregexpr(file.ext, .) %>% lapply(max) %>% unlist() %>% {. - 1}
-  last = ifelse(last < 1, sapply(path, str_length), last) #if last cannot be found, set it to end of string
-  return(path %>% substring(first, last))
-}
-
 se = function(x, na.rm = FALSE) {
   sd(x, na.rm) / sqrt(if(!na.rm) length(x) else sum(!is.na(x)))
 }
 
+#statistical analysis
 correlation_out = function(coroutput) {
   names = coroutput$data.name %>% strsplit(" and ") %>% unlist()
   cat(paste0("r(", names[1], ", ", names[2], "): ", coroutput %>% apa::cor_apa(print=F)), "\n")

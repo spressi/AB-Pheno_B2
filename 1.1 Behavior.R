@@ -87,12 +87,14 @@ behavior = behavior %>%
   #times
   mutate(rt = (time_response - time_target)/10, #response time in ms
          expositionCheck = (time_target - time_distractors)/10, #exposition time in ms (can be NA if premature response before target onset was given)
-         SOA = expositionCheck %>% DescTools::Closest(poststim, .) %>% sapply(min)
+         #SOA = expositionCheck %>% DescTools::Closest(poststim, .) %>% sapply(min) #don't do this! This just creates chaos
+         SOA = NA #create placeholder to be filled by information from sequence file later
   ) %>% 
   select(subject, paradigm, block, trial, SOA, congruency, angry, response, rt, starts_with("distractor"), starts_with("target"), contains("dotprobe"), contains("dual"), expositionCheck, starts_with("time_"))
 
-behavior %>% filter(SOA > expositionCheck) %>% relocate(expositionCheck, .after = SOA) #more likely that SOA was supposed to be shorter but computation overhead made it seem closer to longer soa option
-behavior %>% filter(SOA %>% is.na()) %>% select(subject, trial, SOA, rt, contains("time")) #no for premature responses => get SOA from sequences
+#behavior %>% summarize(`weird_SOA_%` = mean(SOA > expositionCheck)) #SOA shouldn't be greater than expositionCheck => artifact of DescTools::Closest
+#behavior %>% filter(SOA > expositionCheck) %>% relocate(expositionCheck, .after = SOA)
+#behavior %>% filter(SOA %>% is.na()) %>% select(subject, trial, SOA, rt, contains("time")) #no for premature responses => get SOA from sequences
 #behavior %>% filter(rt == max(rt, na.rm=T)) #reaction during ITI (after target offset) is also recorded!
 
 #sequences = files.seq %>% lapply(\(x) x %>% read_tsv(show_col_types=F) %>% mutate(across(contains("target"), as.character))) %>% bind_rows() #file name missing for subject identification => for loop
@@ -122,6 +124,7 @@ sequences %>% select(SOA, angry, condition) %>% unique() %>% arrange(condition)
 #behavior %>% left_join(sequences %>% select(subject, block, trial, SOA2 = SOA, iti)) %>% filter(SOA != SOA2)
 behavior = behavior %>% select(-SOA) %>% left_join(sequences %>% select(subject, block, trial, SOA, iti))
 
+#behavior %>% summarize(`weird_SOA_%` = mean(SOA > expositionCheck)) #should be 0%
 behavior %>% filter(SOA %>% is.na()) %>% select(subject, trial, SOA, rt, contains("time"))
 
 # Quality Checks ----------------------------------------------------------
@@ -153,9 +156,6 @@ frameSkip = behavior %>% select(subject, block:rt, SOA, expositionCheck) %>%
 hist(frameSkip); summary(frameSkip)
 #at least 1 frame is skipped, rarely 2
 
-#behavior %>% pull(expositionCheck) %>% hist()
-#behavior %>% pull(expositionCheck) %>% unique() %>% sort()
-
 #response coding
 #behavior %>% ggplot(aes(x = response, fill = paradigm)) + geom_histogram(stat = "count", color = "black") + facet_wrap(~paradigm, scales = "free")
 
@@ -168,7 +168,7 @@ behavior.valid = behavior %>% filter(response %>% is.na() == F,
 #behavior.valid %>% filter(rt == max(rt, na.rm=T))
 #behavior.valid %>% pull(rt) %>% summary()
 #behavior.valid %>% pull(rt) %>% quantile(seq(.95, 1, .005))
-#behavior.valid %>% filter(rt > targetTime) %>% select(subject, trial, rt, response_dotprobe, contains("time_"), SOA, iti) %>% View("excessive RTs")
+#behavior.valid %>% filter(rt > targetTime) %>% select(subject, trial, rt, response, contains("time_"), SOA, iti) %>% View("excessive RTs")
 
 behavior.valid %>% mutate(.by = subject, rt.win = rt %>% Winsorize.z(z = c(-2, 2))) %>% relocate(rt.win, .after=rt) %>% filter(rt.win != rt)
 behavior.valid = behavior.valid %>% mutate(.by = subject, rt = rt %>% Winsorize.z(z = c(-2, 2)))
