@@ -23,7 +23,7 @@ eeg.markers = eeg.markers.list %>% bind_rows(.id = "subject") %>% tibble() %>%
          paradigm = if_else(subject %>% grepl("a", .), "Dot Probe", "Dual Probe"))
 
 eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% arrange(n)
-
+#eeg.markers %>% count(subject, value) %>% View()
 
 # Breaks ------------------------------------------------------------------
 #TODO will be obsolete when adding start & finish marker
