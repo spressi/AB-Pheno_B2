@@ -13,7 +13,7 @@ library("DescTools")
   #baseline validation
   baseline = c(-300, 0) #Baseline in ms relative to stimulus onset; min(baseline) = start; max(baseline) = end
   useAllBaselines = list() #manually allow all baselines for some participants?
-  saveBaselinePlots = F
+  saveBaselinePlots = T
   driftPlots = T #c("vp30", "vp33")
   maxDeviation_rel = 3 #max abs value of z-score
   outlierLimit.eye = .5 #maximum percentage of invalid baselines per subject
@@ -700,9 +700,9 @@ eye.trial_decline <- glmmTMB(
 tidy(eye.trial_decline, effects = "fixed", conf.int = TRUE)
 
 #exclude trials with insufficient valid fixations (need not be validated for their baseline)
-# fixations.valid = eye.valid.trial %>% filter(valid > validFixTime.trial) %>% select(subject, block, trial) %>% 
-#   left_join(fixations, by=c("subject", "trial", "block"))
-fixations.valid = fixations #take all fixations
+fixations.valid = eye.valid.trial %>% filter(valid > validFixTime.trial) %>% select(subject, block, trial) %>%
+  left_join(fixations, by=c("subject", "trial", "block"))
+#fixations.valid = fixations #take all fixations
 
 
 # baseline validation --------------------------------------------------------------------
