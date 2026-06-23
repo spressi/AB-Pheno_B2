@@ -100,7 +100,7 @@ behavior = behavior %>%
          #SOA = expositionCheck %>% DescTools::Closest(poststim, .) %>% sapply(min) #don't do this! This just creates chaos
          SOA = NA #create placeholder to be filled by information from sequence file later
   ) %>% 
-  select(subject, paradigm, block, trial, SOA, congruency, angry, response, rt, starts_with("distractor"), starts_with("target"), contains("dotprobe"), contains("dual"), expositionCheck, starts_with("time_"))
+  select(subject, paradigm, block, trial, SOA, congruency, angry, response, rt, starts_with("distractor"), starts_with("target"), expositionCheck, starts_with("time_"))
 
 #behavior %>% summarize(`weird_SOA_%` = mean(SOA > expositionCheck)) #SOA shouldn't be greater than expositionCheck => artifact of DescTools::Closest
 #behavior %>% filter(SOA > expositionCheck) %>% relocate(expositionCheck, .after = SOA)
