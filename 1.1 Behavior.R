@@ -18,10 +18,20 @@ behavior = files.behav %>% lapply(\(x) x %>% read_delim(delim="\t", skip=3, show
   rename(event = `Event Type`) %>% rename_with(tolower) %>% select(subject, event, code, time) %>% 
   separate(subject, c("subject", "block")) %>% 
   mutate(block = block %>% as.numeric()) %>% 
-  filter(event == "Response" & code != "1" | #get rid of 1 and 2 responses (space bar & experimenter key)
+  filter(event == "Response" & code != "1" & code != "4" | #get rid of 1 and 4 responses (experimenter key & space bar for EOG calibration)
            code == "targets" |
-           code %>% grepl("distractors", .)) %>% 
+           code %>% grepl("distractors", .) |
+           event == "Manual") %>% 
   mutate(paradigm = if_else(subject %>% str_starts("a"), "Discrimination", "Localization") %>% as_factor())
+
+accuracy = behavior %>% filter(event == "Manual") %>% select(subject, block, code) %>% 
+  separate(code, into = c("type", "accuracy"), sep = ": ") %>% 
+  mutate(#type = type %>% str_remove("accuracy_"),
+    accuracy = accuracy %>% as.double()) %>% 
+  mutate(.by = c(subject, block, type), n = 1:n(), max = n()) %>% 
+  filter(n == max) %>% select(-n, -max) %>% #only keep last accuracy (i.e., final calibration)
+  pivot_wider(names_from = type, values_from = accuracy)
+
 behavior = behavior %>% 
   filter(code %>% grepl("distractors", .)) %>% mutate(.by = subject, trial = 1:n()) %>% #use distractors to count trials
   full_join(behavior, .) %>% #join result back to original data.frame (will have NAs)
@@ -175,12 +185,13 @@ behavior.valid %>% mutate(.by = subject, rt.win = rt %>% Winsorize.z(z = c(-2, 2
 behavior.valid = behavior.valid %>% mutate(.by = subject, rt = rt %>% Winsorize.z(z = c(-2, 2)))
 
 #behavior.valid %>% write_rds("behavior.valid.rds" %>% paste0(path.rds, .))
+#accuracy %>% write_rds("eye_accuracy.rds" %>% paste0(path.rds, .))
 
 # Analysis: RT ------------------------------------------------------------
 
 #behavior.valid = read_rds("behavior.valid.rds" %>% paste0(path.rds, .))
 
-#TODO proceed here
+#TODO proceed here & move to separate analysis script
 behavior.aov = behavior.valid %>% summarize(.by = c(subject, paradigm, SOA, congruency),
                                             rt = mean(rt)) %>% 
   mutate(SOA = SOA %>% as_factor())
