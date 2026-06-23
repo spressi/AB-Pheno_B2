@@ -3,8 +3,8 @@ library(tidyverse)
 #source("1.1 Behavior.R")
 
 markers.n = trials.N*3 + # 3 triggers per trial (distractors, target, response)
-  4 #start & end triggers for each block
-  #6 + 2 #EOG calibration: 6 positions (2x middle, top, right, bottom, left) + start & end triggers
+  2*2 + #start & end triggers for each block
+  (6 + 2)*2 #EOG calibration: 6 positions (2x middle, top, right, bottom, left) + start & end triggers; for each block
 
 #TODO adjust computations by extra markers! save number in separate variable?
 
