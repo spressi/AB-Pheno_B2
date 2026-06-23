@@ -569,6 +569,8 @@ messages = "Messages.txt" %>% paste0(path.eye, .) %>%
                             T ~ "error")
   ) #%>% filter(angry != angryCheck | target != targetCheck | target == "error")
 
+#TODO check EOG messages (filter out into a separate tibble)
+
 #messages %>% count(subject) %>% filter(n != trials.N)
 messages %>% count(subject) %>% filter(n != trials.N, subject %in% {behavior.overview %>% filter(noET %>% is.na() == F) %>% pull(subject)} == F)
 #View(messages %>% filter(subject %in% {messages %>% count(subject) %>% filter(n != trials.N) %>% pull(subject) %>% setdiff(behavior.overview %>% filter(noET %>% is.na() == F) %>% pull(subject))}), "messageCheck")
