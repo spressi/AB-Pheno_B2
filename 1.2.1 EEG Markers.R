@@ -20,20 +20,9 @@ for (file in files.eeg.markers) {
 eeg.markers = eeg.markers.list %>% bind_rows(.id = "subject") %>% tibble() %>% 
   filter(marker %>% grepl("Stimulus", .)) %>% 
   mutate(value = value %>% gsub("S\\s*", "", .) %>% as.integer(),
-         paradigm = if_else(subject %>% grepl("a", .), "Dot Probe", "Dual Probe"))
+         paradigm = if_else(subject %>% grepl("a", .), "Discrimination", "Localization"))
 
 eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% arrange(n)
-#eeg.markers %>% count(subject, value) %>% View()
-
-# Breaks ------------------------------------------------------------------
-#TODO will be obsolete when adding start & finish marker
-breakTime = 2000 #in samples
-eeg.markers.breaks = eeg.markers %>% 
-  mutate(.by = subject, timediff = lead(sample)-sample) %>% 
-  summarize(.by = subject, 
-            breaks = sum(timediff > breakTime, na.rm=T),
-            breakIndex = if_else(breaks == 1, which.max(timediff), NA),
-            n = n()
-            )
-eeg.markers.breaks %>% filter(breaks != 1 | breakIndex != markers.n/2 | n != markers.n) #3 markers per trial (distractors, target, & response) => break should be at trials.N * 3 / 2
-#break always after 576th marker
+#eeg.markers %>% count(subject, value) %>% View() 
+#note: target markers will be skipped if a response is premature, cf.
+#behavior %>% filter(expositionCheck %>% is.na())
