@@ -5,6 +5,8 @@ exclusions = c()
 
 trials.N = 576
 trials.N.block = trials.N/2
+trials.eog = 6
+
 hz.eeg = 500
 hz.et = 250
 hz.screen = 59.95
@@ -14,6 +16,8 @@ prestim = 1000
 poststim = c(100, 116, 150, 166, 200, 216, 233, 266, 283, 316, 333, 366, 383, 400, 433, 450, 483, 500)
 targetTime = 1500
 iti.range = c(1009, 1509)
+
+eog.poststim = 1000
 
 expoID = "*" #all messages are beginning of trial
 

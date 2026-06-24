@@ -78,7 +78,7 @@ for (vp in vpn) {
   #msgtxt <- daten[imsg+5] #for calib
   msgtxt <- paste(daten[imsg+4], daten[imsg+5], daten[imsg+6], daten[imsg+7], daten[imsg+8]) #for main experiment... note to future self: don't use whitespaces in messages :)
   #if (length(msgtxt) != 16) { #for calib
-  if (length(msgtxt) != trials.N/2) { #for main experiment
+  if (length(msgtxt) != trials.N/2 + trials.eog) { #for main experiment
     print(paste0(code, ": ERROR Trial labels"))
   }
   

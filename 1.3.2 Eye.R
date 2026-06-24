@@ -552,9 +552,15 @@ library("DescTools")
 messages = "Messages.txt" %>% paste0(path.eye, .) %>% 
   read_delim(delim="\t", locale=locale(decimal_mark=","), na=".", show_col_types=F) %>% #read.table(filePath, skip=1, dec=",", sep="\t", na.strings=".")
   rename(subject = RECORDING_SESSION_LABEL, trial = TRIAL_LABEL, time = CURRENT_MSG_TIME, event = CURRENT_MSG_TEXT) %>% 
-  separate("subject", c("subject", "block"), sep = "_") %>% 
+  separate("subject", c("subject", "block"), sep = "_")
+
+eog = messages %>% filter(event %>% str_detect("EOG")) %>% 
+  separate(event, sep = " ", into = c(NA, "position", NA, NA, NA), remove = F) %>% relocate(position, .before = event)
+
+messages = messages %>% filter(event %>% str_detect("EOG") == F) %>% 
   mutate(block = block %>% as.numeric(), 
          trial = trial %>% sub("Trial: ","", .) %>% as.numeric(),
+         trial = trial - trials.eog,
          trial = trial + (block-1)*trials.N/2) %>% 
   separate(event, c("left", "right"), sep = " \\| ", remove = F) %>% 
   separate(left, c("distract.left", "target.left"), sep = " ") %>% 
@@ -568,8 +574,6 @@ messages = "Messages.txt" %>% paste0(path.eye, .) %>%
                             target.right %>% is.na() ~ "left",
                             T ~ "error")
   ) #%>% filter(angry != angryCheck | target != targetCheck | target == "error")
-
-#TODO check EOG messages (filter out into a separate tibble)
 
 #messages %>% count(subject) %>% filter(n != trials.N)
 messages %>% count(subject) %>% filter(n != trials.N, subject %in% {behavior.overview %>% filter(noET %>% is.na() == F) %>% pull(subject)} == F)
@@ -590,12 +594,25 @@ fixations = "Fixations.txt" %>% paste0(path.eye, .) %>%
   #fixations = fixations %>% select(-2) #drop 2nd column containing only "Trial: " #only works if sep-parameter is set to default
   rename(subject = X1, trial = X2, start = X3,end = X4, x = X5, y = X6) %>% 
   separate("subject", c("subject", "block"), sep = "_") %>% 
+  mutate(x = x %>% gsub(",", ".", .) %>% na_if("NA") %>% as.numeric(),
+         y = y %>% gsub(",", ".", .) %>% na_if("NA") %>% as.numeric(),
+         y = screen.height - y)
+
+eog = eog %>% left_join(fixations, by = join_by(subject, block, trial)) %>% rename(onset = time)
+#eog %>% ggplot(aes(x = x, y = y, color = position, group = interaction(subject, block, trial))) + geom_line()
+eog = eog %>% mutate(start = start - onset, end = end - onset, #realign such that 0 = stim start
+                     start = ifelse(start < 0, 0, start), #discard fraction of fixation before distractor onset
+                     end = if_else(end > eog.poststim, eog.poststim, end), #discard fraction of fixation after distractor offset
+                     dur = end - start) %>% 
+  filter(dur > 0) #note: this may drop some trials completely
+eog %>% ggplot(aes(x = x, y = y, color = position, size = dur)) + geom_point(alpha = .25)
+#TODO why dur never close to eog.poststim ?
+
+fixations = fixations %>% 
   mutate(block = block %>% as.numeric(), 
          trial = trial %>% sub("Trial: ","", .) %>% as.numeric(),
-         trial = trial + (block-1)*trials.N/2,
-         x = x %>% gsub(",", ".", .) %>% na_if("NA") %>% as.numeric(),
-         y = y %>% gsub(",", ".", .) %>% na_if("NA") %>% as.numeric(),
-         y = screen.height - y) %>% 
+         trial = trial - trials.eog,
+         trial = trial + (block-1)*trials.N/2) %>% 
   #filter(subject %in% exclusions.eye.num == F) %>% #exclusion is done in baseline validation below
   left_join(messages %>% select(subject, block, trial, time) %>% rename(onset = time),
             by=c("subject", "block", "trial")) %>% 
