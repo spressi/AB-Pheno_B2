@@ -1,5 +1,5 @@
 ###############################################################################
-# Project "Attentional Bias Phenotypes" of Mario Reutter
+# Project "Attentional Bias Phenotypes" of Mario Reutter-Dieker
 # Script by Matthias Gamer
 #
 # Before running, convert idf-files to text (*_Samples.txt) using IDF converter contained in iTools_setup.exe
