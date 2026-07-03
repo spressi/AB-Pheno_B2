@@ -611,8 +611,9 @@ eog %>% ggplot(aes(x = x, y = y, color = position, size = dur)) + geom_point(alp
 fixations = fixations %>% 
   mutate(block = block %>% as.numeric(), 
          trial = trial %>% sub("Trial: ","", .) %>% as.numeric(),
-         trial = trial - trials.eog,
-         trial = trial + (block-1)*trials.N/2) %>% 
+         trial = trial - trials.eog) %>% 
+  filter(trial > 0) %>% #kick out EOG trials (already stored separately in eog)
+  mutate(trial = trial + (block-1)*trials.N/2) %>% 
   #filter(subject %in% exclusions.eye.num == F) %>% #exclusion is done in baseline validation below
   left_join(messages %>% select(subject, block, trial, time) %>% rename(onset = time),
             by=c("subject", "block", "trial")) %>% 
@@ -632,8 +633,15 @@ fixations.distractors = fixations %>%
 
 
 # Overall Check -----------------------------------------------------------
-fixations %>% select(subject, trial) %>% unique() %>% count(subject)
-fixations %>% summarize(.by = subject, min = min(trial), max = max(trial), n = max - min + 1)
+fixations %>% select(subject, trial) %>% unique() %>% count(subject) %>% filter(n != trials.N)
+fixations %>% summarize(.by = subject, min = min(trial), max = max(trial), n = max - min + 1) %>% filter(min != 1 | max != trials.N)
+
+accuracy.long = accuracy %>% pivot_longer(starts_with("accuracy"), names_to = "coordinate", values_to = "inaccuracy") %>% 
+  mutate(coordinate = coordinate %>% str_remove("accuracy_"))
+accuracy.long %>% filter(inaccuracy > 1)
+accuracy.long %>% group_by(subject) %>% summarize(inaccuracy = mean(inaccuracy)) %>% summarize(inaccuracy.m = mean(inaccuracy), inaccuracy.sd = sd(inaccuracy))
+
+#valid fixation time complete trial (might produce mutual overlap)
 fixations %>% mutate(dur = end - start) %>% 
   summarize(.by = c(subject, trial), fixTime = sum(dur)/max(end)) %>% 
   summarize(.by = subject, 
@@ -641,6 +649,16 @@ fixations %>% mutate(dur = end - start) %>%
             fixTime.sd = sd(fixTime),
             fixTime.min = min(fixTime),
             fixTime.max = max(fixTime))
+
+#valid fixation time during distractor presentation
+fixations.distractors %>% 
+  summarize(.by = c(subject, trial), fixTime = sum(dur)/first(SOA)) %>% 
+  summarize(.by = subject, 
+            fixTime.m = mean(fixTime),
+            fixTime.sd = sd(fixTime),
+            fixTime.min = min(fixTime),
+            fixTime.max = max(fixTime))
+#TODO cutoff for participants?
 
 # Valid Fixations ---------------------------------------------------------
 vpn.eye = fixations.distractors %>% pull(subject) %>% unique() %>% setdiff(exclusions.eye) %>% sort()
@@ -664,59 +682,6 @@ eye.valid.trial %>% group_by(subject) %>%
   summarize(n = sum(valid.p > validFixTime.subj),
             n_ex = sum(valid.p <= validFixTime.subj) + {fixations %>% pull(subject) %>% unique() %>% setdiff(vpn.eye) %>% length()},
             retention = n / (n + n_ex))
-
-#check if missingness increases over time (e.g., fatigue => droopy eyes)
-rToFishZ = function(r) { return(.5*log((1+r)/(1-r))) }
-fishZtoR = function(Z) { return(ifelse(Z==Inf, 1, (exp(2*Z)-1)/(exp(2*Z)+1))) }
-fnFishZ = function(r, fn=mean, prune=.999, ...) { 
-  warning.txt = ""
-  if (any(abs(r) >= 1, na.rm=T)) {
-    warning.txt = "Correlation(s) contain(s) values at or beyond 1. This will bias results for summary functions." %>% paste0(warning.txt, .)
-    if (prune %>% is.na()) warning = "Consider setting prune parameter." %>% paste(warning.txt, .)
-    else {
-      warning.txt = paste0("Pruning to ", prune, ".") %>% paste(warning.txt, .)
-      
-      r = r %>% prune(abs=prune) #if_else(abs(r) >= 1, prune * if_else(r > 0, 1, -1), r)
-    }
-    warning(warning.txt)
-  }
-  
-  return(r %>% rToFishZ() %>% fn(...) %>% fishZtoR()) 
-}
-
-#eye.valid.trial %>% count(subject, block) %>% filter(n <= 3)
-eye.trial_decline.simple = eye.valid.trial %>% 
-  filter(subject %in% {eye.valid.trial %>% count(subject, block) %>% filter(n <= 3) %>% pull(subject) %>% c("b28")} == F) %>% 
-  mutate(trial = trial - (block-1)*trials.N.block) %>% #restart trial count at block start (due to recalibration of eye tracker)
-  summarize(.by = c(subject, block),
-            #TODO better use binomial regression
-            cor = cor(trial, valid),
-            p = cor.test(trial, valid)$p.value, 
-            cor.test = cor.test(trial, valid) %>% apa::cor_apa(r_ci=T, print=F)) %>% 
-  arrange(p)
-#eye.trial_decline.simple %>% filter(p < .05) %>% print(n=nrow(.)) #all significant correlations are negative
-eye.trial_decline.simple %>% summarize(cor.m = fnFishZ(cor), cor.sd = fnFishZ(cor, fn=sd))
-
-eye.valid.trial %>% 
-  ggplot(aes(x = trial, y = valid, 
-             color = subject, 
-             group = interaction(subject, block))) +
-  #geom_point(alpha=.1) +
-  stat_smooth(method="lm") +
-  myGgTheme
-
-#beta mixed-effects regression
-library(glmmTMB)
-library(broom.mixed)
-
-eye.trial_decline <- glmmTMB(
-  valid ~ SOA * trial + (trial | subject),
-  data = eye.valid.trial %>% 
-    mutate(valid = (valid * (n() - 1) + 0.5) / n(), #correction for 0 and 1 values (not allowed)
-           trial = trial - (block-1)*trials.N.block), #restart trial count at block start (due to recalibration of eye tracker
-  family = beta_family(link = "logit")
-)
-tidy(eye.trial_decline, effects = "fixed", conf.int = TRUE)
 
 #exclude trials with insufficient valid fixations (need not be validated for their baseline)
 fixations.valid = eye.valid.trial %>% filter(valid > validFixTime.trial) %>% select(subject, block, trial) %>%
@@ -761,6 +726,9 @@ fixations.valid = fixations.valid %>%
 #   geom_point(alpha=.1) + #geom_line(alpha=.1) +
 #   myGgTheme
 fixations.valid %>% ggplot(aes(x = x, fill = ROI.side)) +
+  facet_wrap(~paradigm) +
+  #facet_wrap(~SOA) +
+  #facet_grid(rows = vars(paradigm), cols = vars(SOA)) +
   geom_histogram(boundary = screen.width/2, binwidth = indifference.zone/2, color = "black") +
   #geom_vline(xintercept = c(-indifference.zone, +indifference.zone) + screen.width/2, linetype = "dashed", color = "red") +
   myGgTheme
