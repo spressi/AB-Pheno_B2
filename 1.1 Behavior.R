@@ -193,76 +193,27 @@ behavior.valid = behavior.valid %>% mutate(.by = subject, rt = rt %>% Winsorize.
 
 #TODO proceed here & move to separate analysis script
 behavior.aov = behavior.valid %>% summarize(.by = c(subject, paradigm, SOA, congruency),
-                                            rt = mean(rt)) %>% 
-  mutate(SOA = SOA %>% as_factor())
+                                            rt = mean(rt))
 
-# Dot Probe
-behavior.aov.dot = behavior.aov %>% filter(paradigm == "Dot Probe")
+rt.model = lmerTest::lmer(rt ~ SOA * congruency * paradigm + (1|subject), 
+                      behavior.aov)
+#rt.model %>% summary()
+rt.model %>% anova()
 
-behavior.aov.dot %>% 
-  ez::ezANOVA(dv = rt, wid = subject,
-              within = .(SOA, congruency),
-              type=2, detailed=T) %>% apa::anova_apa(force_sph_corr = T)
+behavior.aov %>% 
+  pivot_wider(names_from = congruency, values_from = rt) %>% 
+  mutate(rtbias = angry - neutral) %>% 
+  summarize(.by = c(paradigm, SOA),
+            #rt.se = se(rt), 
+            `RT-Bias (ms)` = mean(rtbias),
+            rtbias.se = se(rtbias)) %>%
 
-behavior.aov.dot %>% summarize(.by = c(SOA, congruency),
-                               rt.se = se(rt), rt = mean(rt)) %>% 
-  ggplot(aes(x = SOA, y = rt, color = congruency)) +
-  geom_errorbar(aes(ymin=rt-rt.se*1.96, ymax=rt+rt.se*1.96), size=2, position = dodge) +
-  geom_point(size=6, position = dodge) +
-  labs(y = "RT (ms)") +
+  ggplot(aes(x = SOA, y = `RT-Bias (ms)`)) + facet_wrap(~paradigm) +
+  #geom_ribbon(aes(ymin=`RT-Bias (ms)`-rtbias.se*1.96, ymax=`RT-Bias (ms)`+rtbias.se*1.96), alpha = .5) +
+  geom_smooth(method="lm", color = "black") +
+  geom_point(size=6) +
+  xlab("SOA (ms)") +
   myGgTheme
-
-with(behavior.aov.dot %>% filter(SOA=="100") %>% pivot_wider(names_from = congruency, values_from = rt), 
-     t.test(neutral, angry, paired=T)) %>% apa::t_apa(es_ci=T)
-with(behavior.aov.dot %>% filter(SOA=="500") %>% pivot_wider(names_from = congruency, values_from = rt), 
-     t.test(neutral, angry, paired=T)) %>% apa::t_apa(es_ci=T)
-
-behavior.aov.dot %>% summarize(.by = c(SOA, congruency),
-                               rt.se = se(rt), rt = mean(rt))
-
-# Dual Probe
-behavior.aov.dual = behavior.aov %>% filter(paradigm == "Dual Probe")
-
-behavior.aov.dual %>% 
-  ez::ezANOVA(dv = rt, wid = subject,
-              within = .(SOA, congruency),
-              type=2, detailed=T) %>% apa::anova_apa(force_sph_corr = T)
-
-behavior.aov.dual %>% summarize(.by = c(SOA, congruency),
-                               rt.se = se(rt), rt = mean(rt)) %>% 
-  ggplot(aes(x = SOA, y = rt, color = congruency)) +
-  geom_errorbar(aes(ymin=rt-rt.se*1.96, ymax=rt+rt.se*1.96), size=2, position = dodge) +
-  geom_point(size=6, position = dodge) +
-  labs(y = "RT (ms)") +
-  myGgTheme
-
-behavior.aov.dual %>% summarize(.by = c(SOA),
-                               rt.se = se(rt), rt = mean(rt))
-
-# both
-# behavior.aov %>% 
-#   ez::ezANOVA(dv = rt, wid = subject,
-#               within = .(SOA, congruency),
-#               between = paradigm,
-#               type=2, detailed=T) %>% apa::anova_apa(force_sph_corr = T)
-# 
-# behavior.aov %>% summarize(.by = c(paradigm, SOA, congruency),
-#                                 rt.se = se(rt), rt = mean(rt)) %>% 
-# ggplot(aes(x = SOA, y = rt, color = congruency)) + facet_wrap(~paradigm) +
-#   geom_errorbar(aes(ymin=rt-rt.se*1.96, ymax=rt+rt.se*1.96), size=2, position = dodge) +
-#   geom_point(size=6, position = dodge) +
-#   labs(y = "RT (ms)") +
-#   myGgTheme
-
-
-# Analysis: Dual Responses ------------------------------------------------
-behavior.valid %>% filter(paradigm == "Dual Probe") %>% 
-  mutate(SOA = SOA %>% as_factor()) %>% 
-  summarize(.by = c(subject, SOA),
-            response_angry = mean(congruency == "angry")-.5) %>% 
-  ez::ezANOVA(dv = response_angry, wid = subject,
-              within = .(SOA),
-              type=2, detailed=T) %>% apa::anova_apa(force_sph_corr = T)
 
 
 # Reliability -------------------------------------------------------------
@@ -273,6 +224,8 @@ behavior.reliability = behavior.valid %>%
   mutate(split = if_else(trial_within %% 2 == 0, "even", "odd")) %>% 
   summarize(.by = c(subject, paradigm, SOA, congruency, split),
             rt = mean(rt))
+
+#TODO model-based reliability, partializing out the effect of SOA on RT-Bias?
 
 #RT-differences
 behavior.reliability %>% pivot_wider(names_from = c(congruency, split), values_from = rt) %>% 
