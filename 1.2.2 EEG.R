@@ -1,7 +1,6 @@
 library(tidyverse)
 #source("0 General.R")
 #source("1.1 Behavior.R")
-#source("1.2.1 EEG Markers.R")
 
 # Markers -----------------------------------------------------------------
 files.eeg.markers = list.files(path.eeg.raw, pattern = ".mrk", full.names = T) %>% 
@@ -16,34 +15,29 @@ for (file in files.eeg.markers) {
 eeg.markers = eeg.markers.list %>% bind_rows(.id = "subject") %>% tibble() %>% 
   filter(marker %>% grepl("Stimulus", .)) %>% 
   mutate(value = value %>% gsub("S\\s*", "", .) %>% as.integer(),
-         paradigm = if_else(subject %>% grepl("a", .), "Dot Probe", "Dual Probe"))
+         paradigm = if_else(subject %>% grepl("a", .), "Discrimination", "Localization"))
 
-eeg.markers %>% count(subject) %>% filter(n != 1152) %>% arrange(n)
-#a07: only first block
-#a13: last 2 markers (i.e., last trial) missing in EEG (verified, see code below)
-#a30: last 2 markers (i.e., last trial) missing in EEG (verified, see code below)
+eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% arrange(n)
+#a03: EEG recording started too late, first 4 EOG calibration markers (3 trials) missing => use 2nd EOG for both blocks?
 
-# #check what happened to a13
-# list.files(path.seq, pattern = "a13", full.names = T) %>% Filter(\(x) x %>% grepl("_0", .) == F, .) %>% #get rid of training
-#   lapply(read_tsv) %>% bind_rows() %>% 
-#   mutate(trial = 1:n(), condition = condition + if_else(soa == 100, 5, 0)) %>% 
-#   select(trial, condition) %>% 
-#   filter(condition != eeg.markers %>% filter(subject == "a13", value %in% c(99, 96) == F) %>% pull(value) %>% c(NA))
-# #=> no mismatch across trials
+#check missing markers
+eeg.markers %>% count(subject, value) %>% 
+  mutate(correct = case_when(value %in% c(88, 99) ~ T, #always assume correct here / check later
+                             value == 211 & n == 4 ~ T, #EOG center
+                             value >= 200 & n == 2 ~ T, #all other EOG
+                             n %in% c(8, 16) ~ T, #could differentiate: a needs 8 for target markers, b 16 throughout
+                             T ~ F)) %>% 
+  filter(correct == F) %>% 
+  mutate(meaning = case_when(value == 200 ~ "Block Start", value == 201 ~ "Block End",
+                             value == 210 ~ "EOG Start", value == 211 ~ "EOG Center", value == 212 ~ "EOG Top", value == 213 ~ "EOG Right", value == 214 ~ "EOG Bottom", value == 215 ~ "EOG Left", value == 220 ~ "EOG End",
+                             value %% 10 <= 2 ~ "distractor",
+                             value %% 10 >= 4 ~ "target"))
+#note: target markers will be skipped if a response is premature, cf.
+#behavior %>% filter(expositionCheck %>% is.na())
 
-# #check what happened to a30
-# list.files(path.seq, pattern = "a30", full.names = T) %>% Filter(\(x) x %>% grepl("_0", .) == F, .) %>% #get rid of training
-#   lapply(read_tsv) %>% bind_rows() %>%
-#   mutate(trial = 1:n(), condition = condition + if_else(soa == 100, 5, 0)) %>%
-#   select(trial, condition) %>%
-#   filter(condition != eeg.markers %>% filter(subject == "a30", value %in% c(99, 96) == F) %>% pull(value) %>% c(NA))
-# #=> no mismatch across trials
+#check missing trials (should stand out on other variables, too)
+eeg.markers %>% filter(value %in% c(88, 99)) %>% count(subject, value) %>% pivot_wider(names_from = value, values_from = n) %>% mutate(sum = `88` + `99`) %>% filter(sum != trials.N)
 
-# assert correct markers
-eeg.markers %>% filter(paradigm=="Dot Probe" & value %in% c(11, 12, 16, 17, 21, 22, 26, 27, 111, 112, 116, 117, 121, 122, 126, 127, 96, 99) == F | 
-                         paradigm=="Dual Probe" & value %in% c(1, 2, 6, 7, 88, 99) == F)
-eeg.markers %>% filter(paradigm=="Dot Probe") %>% count(value) %>% arrange(value)
-eeg.markers %>% filter(paradigm=="Dual Probe") %>% count(value) %>% arrange(value)
 
 # # assert balancing of angry left & right
 # sequences %>% filter(subject %>% str_starts("b")) %>% 
@@ -57,7 +51,8 @@ eeg.markers %>%
   mutate(.by = subject, 
          trial = ceiling(1:n()/2),
          samplediff = sample-lag(sample)) %>% 
-  filter(samplediff == min(samplediff, na.rm=T)) %>% 
+  #filter(samplediff == min(samplediff, na.rm=T)) %>% 
+  filter(samplediff < 50) %>% 
   left_join(sequences %>% select(subject, trial, SOA, iti)) #premature response within the first 100 ms => shorter than a normal 100 ms trial :(
 
 eeg.markers.long = eeg.markers %>% 
@@ -82,6 +77,7 @@ eeg.markers.long %>% select(-contains("sample")) %>%
       stimToNextStim == min(stimToNextStim, na.rm=T) |
       stimToNextStim == max(stimToNextStim, na.rm=T)
   ) %>% arrange(rt) #%>% relocate(stimToResp, stimToNextStim)
+#TODO renew calculation of premature responses in 1.1 Behavior?
 
 eeg.markers.long %>% select(-contains("sample")) %>% 
   filter(value_response == 99) %>% 
@@ -89,9 +85,9 @@ eeg.markers.long %>% select(-contains("sample")) %>%
            stimToResp == max(stimToResp, na.rm=T) |
            stimToNextResp == min(stimToNextResp, na.rm=T)
   ) %>% arrange(rt) %>% relocate(stimToResp, stimToNextResp)
-#max time to correct response: 2010 ms
-#min time to NEXT correct response: 2024 ms
-# => barely not overlapping!
+#max time to correct response: TODO ms
+#min time to NEXT correct response: TODO ms
+# => check for overlap
   
 # Impedances --------------------------------------------------------------
 files.eeg.headers = list.files(path.eeg.raw, pattern = ".vhdr", full.names = T)
@@ -99,7 +95,7 @@ eeg.impedances.list = list()
 for (file in files.eeg.headers) {
   #file = files.eeg.headers %>% sample(1) #for testing
   
-  skip = 112 #start with skipping 112 lines (b06 for whatever reason)
+  skip = 111 #start with skipping 111 lines (will be reduced for each subject)
   repeat { #do-while loop
     checkFile = file %>% 
       read_table(skip = skip, col_names = c("electrode", "impedance"), show_col_types = F, na = "???")
@@ -107,6 +103,7 @@ for (file in files.eeg.headers) {
       break
     } else {
       skip = skip - 1
+      if (skip < 0) stop(paste0("No start of impedance list found for ", file %>% pathToCode(), ". Check vhdr file if increasing skip parameter will solve the issue: \n", file))
     }
   }
   
@@ -122,22 +119,13 @@ eeg.impedances = eeg.impedances.list %>% bind_rows(.id = "subject") %>%
 
 #sanity checks
 eeg.impedances %>% count(electrode, name = "files") %>% count(files, name = "electrodes")
-eeg.impedances %>% filter(impedance %>% is.na()) %>% pull(subject_session) %>% unique() #TODO check NAs
+eeg.impedances %>% filter(impedance %>% is.na()) %>% pull(subject_session) %>% unique()
 
 ##impedance change before/after
-# with(eeg.impedances %>% summarize(.by = c(subject, time),
-#                              impedance = mean(impedance, na.rm=T)) %>% 
-#   pivot_wider(id_cols = subject, names_from = time, values_from = impedance),
-#   t.test(before, after, paired=T)
-# ) %>% apa::t_apa(es_ci=T)
-#just saving another file does not work to measure impedances after experiment :(
-# => need to click on impedance measurement again; otherwise previous values will just get carried over
-
 eeg.impedances.m = eeg.impedances %>% summarize(.by = c(subject, time),
                                                 impedance = mean(impedance, na.rm=T)) %>% 
-  pivot_wider(names_from = time, values_from = impedance) %>% filter(before != after)
+  pivot_wider(names_from = time, values_from = impedance)
 
-with(eeg.impedances.m, t.test(after, before, paired=T)
-) %>% apa::t_apa(es_ci=T)
+with(eeg.impedances.m, t.test(after, before, paired=T)) %>% apa::t_apa(es_ci=T)
 eeg.impedances.m %>% summarize(before.m = mean(before), before.sd = sd(before), 
                                after.m = mean(after), after.sd = sd(after))
