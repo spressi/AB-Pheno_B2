@@ -4,7 +4,7 @@ library(DescTools)
 
 files.behav = list.files(path.behav, pattern = ".log", full.names = T) %>% 
   Filter(\(x) x %>% grepl("_0", .) == F, .) %>% #get rid of training logs
-  Filter(\(x) x %>% grepl("Pre.log", .) == F, .) #get rid of restarts
+  Filter(\(x) x %>% grepl("Pre\\d?.log", .) == F, .) #get rid of restarts
 files.seq = list.files(path.seq, pattern = ".txt", full.names = T) %>% 
   Filter(\(x) x %>% grepl("_0", .) == F, .) %>% #get rid of training sequences
   Filter(\(x) x %>% grepl("test", .) == F, .) %>% #get rid of test sequences
