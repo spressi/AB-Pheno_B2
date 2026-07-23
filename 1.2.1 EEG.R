@@ -3,6 +3,10 @@ library(tidyverse)
 #source("1.1 Behavior.R")
 
 # Markers -----------------------------------------------------------------
+markers.n = trials.N*3 + # 3 triggers per trial (distractors, target, response)
+  2*2 + #start & end triggers for each block
+  (6 + 2)*2 #EOG calibration: 6 positions (2x middle, top, right, bottom, left) + start & end triggers; for each block
+
 files.eeg.markers = list.files(path.eeg.raw, pattern = ".mrk", full.names = T) %>% 
   Filter(\(x) x %>% grepl("_2", .) == F, .) %>% #get rid of second file
   Filter(\(x) x %>% grepl("_original", .) == F, .) #get rid of original marker files (just backup for transparency)
@@ -17,8 +21,11 @@ eeg.markers = eeg.markers.list %>% bind_rows(.id = "subject") %>% tibble() %>%
   mutate(value = value %>% gsub("S\\s*", "", .) %>% as.integer(),
          paradigm = if_else(subject %>% grepl("a", .), "Discrimination", "Localization"))
 
-eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% arrange(n)
+eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% mutate(diff = n - markers.n) #%>% arrange(n)
 #a03: EEG recording started too late, first 4 EOG calibration markers (3 trials) missing => use 2nd EOG for both blocks?
+#b04: EEG recording started too late, EOG start marker missing (no problem) + 1 response missing???
+#b06: 2 premature responses (i.e., missing target marker) & 1 response missing???
+#b07: 2 premature responses (i.e., missing target marker)
 
 #check missing markers
 eeg.markers %>% count(subject, value) %>% 
@@ -36,7 +43,7 @@ eeg.markers %>% count(subject, value) %>%
 #behavior %>% filter(expositionCheck %>% is.na())
 
 #check missing trials (should stand out on other variables, too)
-eeg.markers %>% filter(value %in% c(88, 99)) %>% count(subject, value) %>% pivot_wider(names_from = value, values_from = n) %>% mutate(sum = `88` + `99`) %>% filter(sum != trials.N)
+eeg.markers %>% filter(value %in% c(88, 99)) %>% count(subject, value) %>% pivot_wider(names_from = value, values_from = n) %>% mutate(sum = `88` + `99`) %>% filter(sum != trials.N) %>% mutate(diff = sum - trials.N)
 
 
 # # assert balancing of angry left & right
