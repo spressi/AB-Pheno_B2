@@ -645,19 +645,19 @@ accuracy.long %>% group_by(subject) %>% summarize(inaccuracy = mean(inaccuracy))
 fixations %>% mutate(dur = end - start) %>% 
   summarize(.by = c(subject, trial), fixTime = sum(dur)/max(end)) %>% 
   summarize(.by = subject, 
-            fixTime.m = mean(fixTime),
-            fixTime.sd = sd(fixTime),
-            fixTime.min = min(fixTime),
-            fixTime.max = max(fixTime))
+            fixTime.m = mean(fixTime, na.rm=T),
+            fixTime.sd = sd(fixTime, na.rm=T),
+            fixTime.min = min(fixTime, na.rm=T),
+            fixTime.max = max(fixTime, na.rm=T))
 
 #valid fixation time during distractor presentation
 fixations.distractors %>% 
   summarize(.by = c(subject, trial), fixTime = sum(dur)/first(SOA)) %>% 
   summarize(.by = subject, 
-            fixTime.m = mean(fixTime),
-            fixTime.sd = sd(fixTime),
-            fixTime.min = min(fixTime),
-            fixTime.max = max(fixTime))
+            fixTime.m = mean(fixTime, na.rm=T),
+            fixTime.sd = sd(fixTime, na.rm=T),
+            fixTime.min = min(fixTime, na.rm=T),
+            fixTime.max = max(fixTime, na.rm=T))
 #TODO cutoff for participants?
 
 # Valid Fixations ---------------------------------------------------------
@@ -696,7 +696,7 @@ baselines.summary2 = validateBaselines(fixations.valid %>% filter(block==2), mes
 baselines.trial2 = baselines.trial; rm(baselines.trial)
 
 # baseline validation summary
-baselines.summary = baselines.summary1 %>% bind_rows(baselines.summary2) %>% 
+baselines.summary = baselines.summary1 %>% bind_rows(baselines.summary2) %>% tibble() %>% 
   mutate(included = invalid <= outlierLimit.eye & range_x <= maxSpread & range_y <= maxSpread,
          block = block %>% as_factor())
 rm(baselines.summary1, baselines.summary2)
@@ -739,6 +739,7 @@ fixations.first = fixations.valid %>%
   ) %>% 
   summarize(.by = c(subject, trial, paradigm, SOA, angry),
             firstDwell = ROI %>% na.omit() %>% first()) %>% 
+  filter(firstDwell %>% is.na() == F) %>% 
   summarize(.by = -c(trial, firstDwell),
             firstDwell.angry = mean(firstDwell=="angry", na.rm=T)) %>% 
   arrange(subject, paradigm, SOA, angry) %>% mutate(SOA = SOA %>% as_factor())
