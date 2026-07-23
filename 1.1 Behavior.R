@@ -231,11 +231,11 @@ behavior.reliability = behavior.valid %>%
 behavior.reliability %>% pivot_wider(names_from = c(congruency, split), values_from = rt) %>% 
   summarize(.by = c(paradigm, SOA),
             reliability = cor.test(neutral_odd - angry_odd, neutral_even - angry_even) %>% apa::cor_apa(r_ci=T, print=F),
-            rel_sb = cor(neutral_odd - angry_odd, neutral_even - angry_even) %>% spearmanBrown())
+            rel_sb = cor(neutral_odd - angry_odd, neutral_even - angry_even) %>% spearmanBrown()) %>% arrange(desc(rel_sb))
 
 
 #RTs
 behavior.reliability %>% pivot_wider(names_from = split, values_from = rt) %>% 
   summarize(.by = c(paradigm, SOA, congruency),
             reliability = cor.test(odd, even) %>% apa::cor_apa(r_ci=T, print=F),
-            rel_sb = cor(odd, even) %>% spearmanBrown())
+            rel_sb = cor(odd, even) %>% spearmanBrown()) %>% arrange(desc(rel_sb))
