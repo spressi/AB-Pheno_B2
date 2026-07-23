@@ -247,7 +247,8 @@ read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/calib/Summary", .), "Fixati
   
 # Check Fixations ---------------------------------------------------------
 read_tsv(paste0(path.eye, "Fixations.txt"), locale = locale(decimal_mark = ",")) %>% 
-  left_join(read_tsv(paste0(path.eye, "Messages.txt"), locale = locale(decimal_mark = ",")), by = c("RECORDING_SESSION_LABEL", "TRIAL_LABEL")) %>% 
+  left_join(read_tsv(paste0(path.eye, "Messages.txt"), locale = locale(decimal_mark = ",")), by = c("RECORDING_SESSION_LABEL", "TRIAL_LABEL")) %>%
+  filter(CURRENT_MSG_TEXT %>% str_detect("EOG") == F) %>% 
   separate(CURRENT_MSG_TEXT, c("distractL", "targetL", NA, "distractR", "targetR"), sep = " ") %>% 
   mutate(angry = if_else(distractL %>% grepl("category1", .), "left", "right"),
          targetSide = if_else(targetL=="NA", "right", "left"),
