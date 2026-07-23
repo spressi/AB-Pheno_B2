@@ -200,6 +200,21 @@ rt.model = lmerTest::lmer(rt ~ SOA * congruency * paradigm + (1|subject),
 #rt.model %>% summary()
 rt.model %>% anova()
 
+#(absolute) RT
+behavior.aov %>% 
+  summarize(.by = c(paradigm, SOA, congruency),
+            #rt.se = se(rt), 
+            `RT (ms)` = mean(rt),
+            rt.se = se(rt)) %>%
+  
+  ggplot(aes(x = SOA, y = `RT (ms)`)) + facet_wrap(~paradigm) +
+  #geom_ribbon(aes(ymin=`RT (ms)`-rt.se*1.96, ymax=`RT (ms)`+rt.se*1.96), alpha = .5) +
+  geom_smooth(method="lm", color = "black") +
+  geom_point(size=6) +
+  xlab("SOA (ms)") +
+  myGgTheme
+
+#RT-Bias
 behavior.aov %>% 
   pivot_wider(names_from = congruency, values_from = rt) %>% 
   mutate(rtbias = angry - neutral) %>% 
