@@ -742,7 +742,7 @@ fixations.first = fixations.valid %>%
   filter(firstDwell %>% is.na() == F) %>% 
   summarize(.by = -c(trial, firstDwell),
             firstDwell.angry = mean(firstDwell=="angry", na.rm=T)) %>% 
-  arrange(subject, paradigm, SOA, angry) %>% mutate(SOA = SOA %>% as_factor())
+  arrange(subject, paradigm, SOA, angry) #%>% mutate(SOA = SOA %>% as_factor())
 
 
 # Statistical Analysis ----------------------------------------------------
