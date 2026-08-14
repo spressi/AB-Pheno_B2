@@ -37,10 +37,10 @@ eeg.markers = eeg.markers %>%
 
 # * Missing Markers -------------------------------------------------------
 eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% mutate(diff = n - markers.n) #%>% arrange(n)
-#a03: EEG recording started too late, first 4 EOG calibration markers (3 trials) missing => use 2nd EOG for both blocks?
-#b04: EEG recording started too late, EOG start marker missing (no problem) + 1 response missing???
-#b06: 2 premature responses (i.e., missing target marker) & 1 response missing???
-#b07: 2 premature responses (i.e., missing target marker)
+#a03: first 4 EOG calibration markers (3 trials) missing => use 2nd EOG for both blocks?
+#b04: first EOG start marker missing (no problem) + 1 response missing???
+#b06: 2 targets missing + 1 response missing???
+#b07: 2 targets missing
 
 #check missing markers
 eeg.markers %>% count(subject, value) %>% 
