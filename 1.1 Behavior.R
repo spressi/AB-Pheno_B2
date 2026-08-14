@@ -184,8 +184,8 @@ behavior.valid = behavior %>% filter(response %>% is.na() == F,
 #behavior.valid %>% mutate(.by = subject, rt.win = rt %>% Winsorize.z(z = c(-2, 2))) %>% relocate(rt.win, .after=rt) %>% filter(rt.win != rt)
 behavior.valid = behavior.valid %>% mutate(.by = subject, rt = rt %>% Winsorize.z(z = c(-2, 2)))
 
-#behavior.valid %>% write_rds("behavior.valid.rds" %>% paste0(path.rds, .))
-#accuracy %>% write_rds("eye_accuracy.rds" %>% paste0(path.rds, .))
+behavior.valid %>% write_rds("behavior.valid.rds" %>% paste0(path.rds, .))
+accuracy %>% write_rds("eye_accuracy.rds" %>% paste0(path.rds, .))
 
 # Analysis: RT ------------------------------------------------------------
 
