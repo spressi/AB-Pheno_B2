@@ -38,9 +38,14 @@ eeg.markers = eeg.markers %>%
 # * Missing Markers -------------------------------------------------------
 eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% mutate(diff = n - markers.n) #%>% arrange(n)
 #a03: first 4 EOG calibration markers (3 trials) missing => use 2nd EOG for both blocks?
+#a10: first 2 EOG calibration markers (1 trial)  missing => use 2nd Center only for first block
 #b04: first EOG start marker missing (no problem) + 1 response missing???
 #b06: 2 targets missing + 1 response missing???
 #b07: 2 targets missing
+#b08: 1 target  missing
+#b09: first 2 EOG calibration markers (1 trial)  missing => use 2nd Center only for first block
+#b11: 2 targets missing
+#b13: 3 targets missing
 
 #check missing markers
 eeg.markers %>% count(subject, value) %>% 
@@ -109,8 +114,8 @@ eeg.markers.wide %>%
            stimToResp == max(stimToResp, na.rm=T) |
            stimToNextResp == min(stimToNextResp, na.rm=T)
   ) %>% arrange(rt) %>% relocate(stimToResp, stimToNextResp)
-#max time to correct response: TODO ms
-#min time to NEXT correct response: TODO ms
+#max time to correct response: 1954 ms
+#min time to NEXT correct response: 2042 ms
 # => check for overlap
   
 # Impedances --------------------------------------------------------------
