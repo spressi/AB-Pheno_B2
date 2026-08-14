@@ -227,23 +227,23 @@ write.table(allsactab,paste(path.eye,"Saccades.txt",sep=""),sep="\t",dec=",",quo
 
 
 # Check Eye Calib ---------------------------------------------------------
-read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/calib/Summary", .), "Fixations.txt"), locale = locale(decimal_mark = ",")) %>% 
-  left_join(read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/calib/Summary", .), "Messages.txt"), locale = locale(decimal_mark = ",")), by = c("RECORDING_SESSION_LABEL", "TRIAL_LABEL")) %>% 
-  mutate(CURRENT_MSG_TEXT = CURRENT_MSG_TEXT %>% str_extract("Grid_\\d+_\\d+"),
-         start = CURRENT_FIX_START - CURRENT_MSG_TIME,
-         start = if_else(start < 0, 0, start),
-         end = CURRENT_FIX_END - CURRENT_MSG_TIME,
-         end = if_else(end < 0, 0, end),
-         dur = end - start) %>% 
-  filter(dur > 0) %>% 
-  rename(subject = RECORDING_SESSION_LABEL) %>% 
-  #mutate(fixnum = 1:n(), firstfix = fixnum == 1, .by = c(subject, CURRENT_MSG_TEXT)) %>% 
-  #filter(dur == max(dur), .by = c(subject, CURRENT_MSG_TEXT)) %>% 
-  ggplot(aes(x = CURRENT_FIX_X, y = CURRENT_FIX_Y, color = CURRENT_MSG_TEXT, shape = subject, size = dur)) +
-  geom_rect(color="black", fill=NA, xmin = 0, xmax = screen.width.px, ymin = 0, ymax = screen.height.px, inherit.aes = F) +
-  geom_path(aes(group = interaction(subject, TRIAL_LABEL)), linewidth=1, alpha = .25) +
-  geom_point(alpha = .5) + 
-  scale_color_viridis_d() + coord_fixed(ratio = 1) + myGgTheme
+# read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/calib/Summary", .), "Fixations.txt"), locale = locale(decimal_mark = ",")) %>% 
+#   left_join(read_tsv(paste0(path.eye %>% gsub("/Summary", "/test/calib/Summary", .), "Messages.txt"), locale = locale(decimal_mark = ",")), by = c("RECORDING_SESSION_LABEL", "TRIAL_LABEL")) %>% 
+#   mutate(CURRENT_MSG_TEXT = CURRENT_MSG_TEXT %>% str_extract("Grid_\\d+_\\d+"),
+#          start = CURRENT_FIX_START - CURRENT_MSG_TIME,
+#          start = if_else(start < 0, 0, start),
+#          end = CURRENT_FIX_END - CURRENT_MSG_TIME,
+#          end = if_else(end < 0, 0, end),
+#          dur = end - start) %>% 
+#   filter(dur > 0) %>% 
+#   rename(subject = RECORDING_SESSION_LABEL) %>% 
+#   #mutate(fixnum = 1:n(), firstfix = fixnum == 1, .by = c(subject, CURRENT_MSG_TEXT)) %>% 
+#   #filter(dur == max(dur), .by = c(subject, CURRENT_MSG_TEXT)) %>% 
+#   ggplot(aes(x = CURRENT_FIX_X, y = CURRENT_FIX_Y, color = CURRENT_MSG_TEXT, shape = subject, size = dur)) +
+#   geom_rect(color="black", fill=NA, xmin = 0, xmax = screen.width.px, ymin = 0, ymax = screen.height.px, inherit.aes = F) +
+#   geom_path(aes(group = interaction(subject, TRIAL_LABEL)), linewidth=1, alpha = .25) +
+#   geom_point(alpha = .5) + 
+#   scale_color_viridis_d() + coord_fixed(ratio = 1) + myGgTheme
   
 # Check Fixations ---------------------------------------------------------
 read_tsv(paste0(path.eye, "Fixations.txt"), locale = locale(decimal_mark = ",")) %>% 
