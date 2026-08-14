@@ -745,6 +745,7 @@ fixations.first = fixations.valid %>%
   arrange(subject, paradigm, SOA, angry) #%>% mutate(SOA = SOA %>% as_factor())
 
 
+#TODO proceed here & move to separate analysis script
 # Statistical Analysis ----------------------------------------------------
 fixations.first.missing = fixations.first %>% filter(firstDwell.angry %>% is.na()) %>% pull(subject) %>% unique() %>% sort()
 fixations.first %>% pull(subject) %>% unique() %>% setdiff(fixations.first.missing) %>% length() %>% paste0("N = ", .)
