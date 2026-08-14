@@ -140,10 +140,10 @@ behavior %>% filter(SOA %>% is.na()) %>% select(subject, trial, SOA, rt, contain
 
 # Quality Checks ----------------------------------------------------------
 
-#NAs
+#missing responses (NAs)
 behavior %>% summarize(.by = c(subject, paradigm), NA_n = sum(response %>% is.na()), `NA_%` = mean(response %>% is.na())) %>% summarize(.by = paradigm, across(starts_with("NA_"), list(m = mean, sd = sd)))
 #behavior %>% summarize(.by = c(subject, paradigm), NA_n = sum(response %>% is.na()), `NA_%` = mean(response %>% is.na())) %>% filter(NA_n > 0)
-#behavior %>% filter(response %>% is.na())
+#behavior %>% filter(response %>% is.na()) %>% select(subject, block:rt, target:expositionCheck, time_response, SOA)
 
 #premature responses (i.e., before target onset)
 #behavior %>% summarize(.by = c(subject, paradigm), pre_n = sum(expositionCheck %>% is.na()), `pre_%` = mean(expositionCheck %>% is.na())) %>% summarize(.by = paradigm, across(starts_with("pre_"), list(m = mean, sd = sd)))
