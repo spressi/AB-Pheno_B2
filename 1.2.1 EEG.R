@@ -8,8 +8,8 @@ markers.n = trials.N*3 + # 3 triggers per trial (distractors, target, response)
   (6 + 2)*2 #EOG calibration: 6 positions (2x middle, top, right, bottom, left) + start & end triggers; for each block
 
 files.eeg.markers = list.files(path.eeg.raw, pattern = ".mrk", full.names = T) %>% 
-  Filter(\(x) x %>% grepl("_2", .) == F, .) %>% #get rid of second file
-  Filter(\(x) x %>% grepl("_original", .) == F, .) #get rid of original marker files (just backup for transparency)
+  Filter(\(x) x %>% str_detect("_2") == F, .) %>% #get rid of second file
+  Filter(\(x) x %>% str_detect("_original") == F, .) #get rid of original marker files (just backup for transparency)
 eeg.markers.list = list()
 for (file in files.eeg.markers) {
   #file = files.eeg.markers %>% sample(1) #for testing
@@ -17,9 +17,9 @@ for (file in files.eeg.markers) {
 }
 #tidy up
 eeg.markers = eeg.markers.list %>% bind_rows(.id = "subject") %>% tibble() %>% 
-  filter(marker %>% grepl("Stimulus", .)) %>% 
-  mutate(value = value %>% gsub("S\\s*", "", .) %>% as.integer(),
-         paradigm = if_else(subject %>% grepl("a", .), "Discrimination", "Localization"))
+  filter(marker %>% str_detect("Stimulus")) %>% 
+  mutate(value = value %>% str_replace("S\\s*", "") %>% as.integer(),
+         paradigm = if_else(subject %>% str_detect("a"), "Discrimination", "Localization"))
 
 eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% mutate(diff = n - markers.n) #%>% arrange(n)
 #a03: EEG recording started too late, first 4 EOG calibration markers (3 trials) missing => use 2nd EOG for both blocks?
@@ -50,7 +50,7 @@ eeg.markers %>% filter(value %in% c(88, 99)) %>% count(subject, value) %>% pivot
 # sequences %>% filter(subject %>% str_starts("b")) %>% 
 #   filter(subject %in% {eeg.markers %>% pull(subject) %>% unique()}) %>% 
 #   #pull(subject) %>% unique()
-#   mutate(angry = if_else(distractor_left %>% grepl("AN", .), "left", "right")) %>% 
+#   mutate(angry = if_else(distractor_left %>% str_detect("AN"), "left", "right")) %>% 
 #   count(angry)
 
 # assert correct timing
@@ -106,7 +106,7 @@ for (file in files.eeg.headers) {
   repeat { #do-while loop
     checkFile = file %>% 
       read_table(skip = skip, col_names = c("electrode", "impedance"), show_col_types = F, na = "???")
-    if (checkFile %>% pull(electrode) %>% grepl("Fp1", .) %>% any()) { #check if Fp1 is contained (first electrode)
+    if (checkFile %>% pull(electrode) %>% str_detect("Fp1") %>% any()) { #check if Fp1 is contained (first electrode)
       break
     } else {
       skip = skip - 1
@@ -118,10 +118,10 @@ for (file in files.eeg.headers) {
 }
 #tidy up
 eeg.impedances = eeg.impedances.list %>% bind_rows(.id = "subject") %>% 
-  mutate(electrode = electrode %>% gsub(":", "", .),
-         time = if_else(subject %>% grepl("_2", .), "after", "before") %>% as_factor(),
+  mutate(electrode = electrode %>% str_replace(":", ""),
+         time = if_else(subject %>% str_detect("_2"), "after", "before") %>% as_factor(),
          subject_session = subject,
-         subject = subject %>% gsub("_2", "", .))
+         subject = subject %>% str_replace("_2", ""))
 
 
 #sanity checks
