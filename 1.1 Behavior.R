@@ -128,8 +128,8 @@ sequences = sequences %>% separate(subject, c("subject", "block")) %>%
                            T ~ NA) %>% as.factor()) %>% #alphabetical order desired here! => as.factor
   relocate(subject, paradigm, block, trial, condition, angry, SOA, contains("target"), iti)
 #sequences %>% filter(paradigm %>% is.na() | angry %>% is.na())
-sequences %>% select(SOA, angry, condition) %>% unique() %>% arrange(condition)
-sequences %>% pull(conditionTarget) %>% unique() %>% as.integer() %>% sort()
+#sequences %>% select(SOA, angry, condition) %>% unique() %>% arrange(condition)
+#sequences %>% pull(conditionTarget) %>% unique() %>% as.integer() %>% sort()
   
 #replace SOA from expositionCheck with SOA from sequence file
 #behavior %>% left_join(sequences %>% select(subject, block, trial, SOA2 = SOA, iti)) %>% filter(SOA != SOA2)
@@ -181,7 +181,7 @@ behavior.valid = behavior %>% filter(response %>% is.na() == F,
 #behavior.valid %>% pull(rt) %>% quantile(seq(.95, 1, .005))
 #behavior.valid %>% filter(rt > targetTime) %>% select(subject, trial, rt, response, contains("time_"), SOA, iti) %>% View("excessive RTs")
 
-behavior.valid %>% mutate(.by = subject, rt.win = rt %>% Winsorize.z(z = c(-2, 2))) %>% relocate(rt.win, .after=rt) %>% filter(rt.win != rt)
+#behavior.valid %>% mutate(.by = subject, rt.win = rt %>% Winsorize.z(z = c(-2, 2))) %>% relocate(rt.win, .after=rt) %>% filter(rt.win != rt)
 behavior.valid = behavior.valid %>% mutate(.by = subject, rt = rt %>% Winsorize.z(z = c(-2, 2)))
 
 #behavior.valid %>% write_rds("behavior.valid.rds" %>% paste0(path.rds, .))
