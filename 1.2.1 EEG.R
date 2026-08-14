@@ -131,7 +131,8 @@ for (file in files.eeg.headers) {
     }
   }
   
-  eeg.impedances.list[[pathToCode(file)]] = checkFile
+  eeg.impedances.list[[pathToCode(file)]] = checkFile %>% 
+    mutate(impedance = if_else(impedance=="Out", Inf, impedance %>% as.integer()))
 }
 #tidy up
 eeg.impedances = eeg.impedances.list %>% bind_rows(.id = "subject") %>% 
@@ -144,10 +145,13 @@ eeg.impedances = eeg.impedances.list %>% bind_rows(.id = "subject") %>%
 #sanity checks
 eeg.impedances %>% count(electrode, name = "files") %>% count(files, name = "electrodes")
 eeg.impedances %>% filter(impedance %>% is.na()) %>% pull(subject_session) %>% unique()
+eeg.impedances %>% filter(impedance == Inf)
 
 ##impedance change before/after
-eeg.impedances.m = eeg.impedances %>% summarize(.by = c(subject, time),
-                                                impedance = mean(impedance, na.rm=T)) %>% 
+eeg.impedances.m = eeg.impedances %>% 
+  filter(impedance != Inf) %>% 
+  summarize(.by = c(subject, time),
+            impedance = mean(impedance, na.rm=T)) %>% 
   pivot_wider(names_from = time, values_from = impedance)
 
 with(eeg.impedances.m, t.test(after, before, paired=T)) %>% apa::t_apa(es_ci=T)
