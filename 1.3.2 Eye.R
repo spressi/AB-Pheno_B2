@@ -706,6 +706,7 @@ baselines.summary %>% ggplot(aes(x = invalid, fill = block)) +
   scale_fill_viridis_d() + myGgTheme
 
 baselines.summary %>% summarize(.by = block, totalN = n(), includedN = sum(included), includedP = mean(included))
+baselines.summary %>% filter(included==F)
 
 baselines.summary %>% summarize(.by = subject, invalid = mean(invalid)) %>% arrange(desc(invalid))
 baselines.summary %>% group_by(subject) %>% summarize(invalid = mean(invalid)) %>% 
