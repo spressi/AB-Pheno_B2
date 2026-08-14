@@ -641,26 +641,25 @@ accuracy.long = accuracy %>% pivot_longer(starts_with("accuracy"), names_to = "c
 accuracy.long %>% filter(inaccuracy > 1)
 accuracy.long %>% group_by(subject) %>% summarize(inaccuracy = mean(inaccuracy)) %>% summarize(inaccuracy.m = mean(inaccuracy), inaccuracy.sd = sd(inaccuracy))
 
+# Valid Fixations ---------------------------------------------------------
 #valid fixation time complete trial (might produce mutual overlap)
-fixations %>% mutate(dur = end - start) %>% 
-  summarize(.by = c(subject, trial), fixTime = sum(dur)/max(end)) %>% 
-  summarize(.by = subject, 
-            fixTime.m = mean(fixTime, na.rm=T),
-            fixTime.sd = sd(fixTime, na.rm=T),
-            fixTime.min = min(fixTime, na.rm=T),
-            fixTime.max = max(fixTime, na.rm=T))
+# fixations %>% mutate(dur = end - start) %>% 
+#   summarize(.by = c(subject, trial), fixTime = sum(dur)/max(end)) %>% 
+#   summarize(.by = subject, 
+#             fixTime.m = mean(fixTime, na.rm=T),
+#             fixTime.sd = sd(fixTime, na.rm=T),
+#             fixTime.min = min(fixTime, na.rm=T),
+#             fixTime.max = max(fixTime, na.rm=T))
 
 #valid fixation time during distractor presentation
-fixations.distractors %>% 
-  summarize(.by = c(subject, trial), fixTime = sum(dur)/first(SOA)) %>% 
-  summarize(.by = subject, 
-            fixTime.m = mean(fixTime, na.rm=T),
-            fixTime.sd = sd(fixTime, na.rm=T),
-            fixTime.min = min(fixTime, na.rm=T),
-            fixTime.max = max(fixTime, na.rm=T))
-#TODO cutoff for participants?
+# fixations.distractors %>% 
+#   summarize(.by = c(subject, trial), fixTime = sum(dur)/first(SOA)) %>% 
+#   summarize(.by = subject, 
+#             fixTime.m = mean(fixTime, na.rm=T),
+#             fixTime.sd = sd(fixTime, na.rm=T),
+#             fixTime.min = min(fixTime, na.rm=T),
+#             fixTime.max = max(fixTime, na.rm=T))
 
-# Valid Fixations ---------------------------------------------------------
 vpn.eye = fixations.distractors %>% pull(subject) %>% unique() %>% setdiff(exclusions.eye) %>% sort()
 
 #subjects with 0 valid fixations during any distractor phase of the experiment
