@@ -33,6 +33,9 @@ eeg.markers = eeg.markers %>%
   select(subject, sample, trial) %>% full_join(eeg.markers, ., join_by(subject, sample)) %>% 
   #group_by(subject) %>% fill(trial, .direction = "down") %>% ungroup() %>% 
   fill(trial, .direction = "down") %>% mutate(trial = if_else(kind == "extra", NA, trial))
+
+
+# * Missing Markers -------------------------------------------------------
 eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% mutate(diff = n - markers.n) #%>% arrange(n)
 #a03: EEG recording started too late, first 4 EOG calibration markers (3 trials) missing => use 2nd EOG for both blocks?
 #b04: EEG recording started too late, EOG start marker missing (no problem) + 1 response missing???
@@ -58,6 +61,7 @@ eeg.markers %>% count(subject, value) %>%
 eeg.markers %>% filter(value %in% c(88, 99)) %>% count(subject, value) %>% pivot_wider(names_from = value, values_from = n) %>% mutate(sum = `88` + `99`) %>% filter(sum != trials.N) %>% mutate(diff = sum - trials.N)
 
 
+# * Assertions ------------------------------------------------------------
 # # assert balancing of angry left & right
 # sequences %>% filter(subject %>% str_starts("b")) %>% 
 #   filter(subject %in% {eeg.markers %>% pull(subject) %>% unique()}) %>% 
@@ -75,6 +79,7 @@ eeg.markers %>%
   left_join(sequences %>% select(subject, trial, SOA, iti)) #premature response within the first 100 ms => shorter than a normal 100 ms trial :(
 
 
+# * Long Format -----------------------------------------------------------
 eeg.markers.wide = eeg.markers %>% 
   filter(trial %>% is.na() == F) %>% 
   pivot_wider(names_from = kind, values_from = c(value, sample), id_cols = c(subject, trial)) %>% 
@@ -83,10 +88,10 @@ eeg.markers.wide = eeg.markers %>%
   mutate(stimToResp = (sample_response - sample_distractor) / hz.eeg * 1000,
          rt = stimToResp - SOA) %>% 
   mutate(.by = c(subject, block), 
-         respToNextStim = (lead(sample_stim) - sample_response) / hz.eeg * 1000,
-         stimToNextStim = (lead(sample_stim) - sample_stim) / hz.eeg * 1000,
-         stimToNextResp = (lead(sample_response) - sample_stim) / hz.eeg * 1000)
-eeg.markers.long %>% select(-contains("sample")) %>% 
+         respToNextStim = (lead(sample_distractor) - sample_response) / hz.eeg * 1000,
+         stimToNextStim = (lead(sample_distractor) - sample_distractor) / hz.eeg * 1000,
+         stimToNextResp = (lead(sample_response) - sample_distractor) / hz.eeg * 1000)
+eeg.markers.wide %>% select(-starts_with("value_"), -starts_with("sample_")) %>% 
   filter(#.by = subject,
     stimToResp == min(stimToResp, na.rm=T) |
       stimToResp == max(stimToResp, na.rm=T) |
@@ -97,8 +102,9 @@ eeg.markers.long %>% select(-contains("sample")) %>%
   ) %>% arrange(rt) #%>% relocate(stimToResp, stimToNextStim)
 #TODO renew calculation of premature responses in 1.1 Behavior?
 
-eeg.markers.long %>% select(-contains("sample")) %>% 
+eeg.markers.wide %>% 
   filter(value_response == 99) %>% 
+  select(-starts_with("value_"), -contains("sample")) %>% 
   filter(stimToResp == min(stimToResp, na.rm=T) |
            stimToResp == max(stimToResp, na.rm=T) |
            stimToNextResp == min(stimToNextResp, na.rm=T)
