@@ -15,12 +15,24 @@ for (file in files.eeg.markers) {
   #file = files.eeg.markers %>% sample(1) #for testing
   eeg.markers.list[[pathToCode(file)]] = file %>% read.csv(skip=11, header=F, col.names = c("marker", "value", "sample", "size", "channel"))
 }
+
 #tidy up
 eeg.markers = eeg.markers.list %>% bind_rows(.id = "subject") %>% tibble() %>% 
   filter(marker %>% str_detect("Stimulus")) %>% 
   mutate(value = value %>% str_replace("S\\s*", "") %>% as.integer(),
+         kind = case_when(value >= 200 ~ "extra",
+                          value %in% c(88, 99) ~ "response",
+                          value %% 10 <= 2 ~ "distractor",
+                          value %% 10 >= 4 ~ "target"),
          paradigm = if_else(subject %>% str_detect("a"), "Discrimination", "Localization"))
 
+#trials
+eeg.markers = eeg.markers %>% 
+  filter(kind == "distractor") %>% #count trials using distractor triggers (which never turned out missing)
+  mutate(.by = subject, trial = 1:n()) %>% 
+  select(subject, sample, trial) %>% full_join(eeg.markers, ., join_by(subject, sample)) %>% 
+  #group_by(subject) %>% fill(trial, .direction = "down") %>% ungroup() %>% 
+  fill(trial, .direction = "down") %>% mutate(trial = if_else(kind == "extra", NA, trial))
 eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% mutate(diff = n - markers.n) #%>% arrange(n)
 #a03: EEG recording started too late, first 4 EOG calibration markers (3 trials) missing => use 2nd EOG for both blocks?
 #b04: EEG recording started too late, EOG start marker missing (no problem) + 1 response missing???
@@ -62,14 +74,13 @@ eeg.markers %>%
   filter(samplediff < 50) %>% 
   left_join(sequences %>% select(subject, trial, SOA, iti)) #premature response within the first 100 ms => shorter than a normal 100 ms trial :(
 
-eeg.markers.long = eeg.markers %>% 
-  mutate(.by = subject, trial = ceiling(1:n()/2)) %>% 
-  mutate(.by = c(subject, trial), helper = 1:n()) %>% 
-  mutate(kind = if_else(helper == 1, "stim", "response")) %>% select(-helper) %>% 
+
+eeg.markers.wide = eeg.markers %>% 
+  filter(trial %>% is.na() == F) %>% 
   pivot_wider(names_from = kind, values_from = c(value, sample), id_cols = c(subject, trial)) %>% 
-  left_join(behavior %>% select(subject, block, trial)) %>% relocate(subject, block, trial) %>% #insert block
-  left_join(sequences %>% select(subject, trial, SOA, iti)) %>% #insert SOA & iti
-  mutate(stimToResp = (sample_response - sample_stim) / hz.eeg * 1000,
+  left_join(behavior %>% select(subject, block, trial), by = join_by(subject, trial)) %>% relocate(subject, block, trial) %>% #insert block
+  left_join(sequences %>% select(subject, trial, SOA, iti), by = join_by(subject, trial)) %>% #insert SOA & iti
+  mutate(stimToResp = (sample_response - sample_distractor) / hz.eeg * 1000,
          rt = stimToResp - SOA) %>% 
   mutate(.by = c(subject, block), 
          respToNextStim = (lead(sample_stim) - sample_response) / hz.eeg * 1000,
