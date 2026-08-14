@@ -605,7 +605,7 @@ eog = eog %>% mutate(start = start - onset, end = end - onset, #realign such tha
                      end = if_else(end > eog.poststim, eog.poststim, end), #discard fraction of fixation after distractor offset
                      dur = end - start) %>% 
   filter(dur > 0) #note: this may drop some trials completely
-eog %>% ggplot(aes(x = x, y = y, color = position, size = dur)) + geom_point(alpha = .25)
+eog %>% ggplot(aes(x = x, y = y, color = position, size = dur)) + geom_point(alpha = .25) + myGgTheme
 #TODO why dur never close to eog.poststim ?
 
 fixations = fixations %>% 
