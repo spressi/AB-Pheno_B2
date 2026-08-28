@@ -113,10 +113,12 @@ eeg.markers.wide %>%
   filter(stimToResp == min(stimToResp, na.rm=T) |
            stimToResp == max(stimToResp, na.rm=T) |
            stimToNextResp == min(stimToNextResp, na.rm=T)
-  ) %>% arrange(rt) %>% relocate(stimToResp, stimToNextResp)
+  ) %>% arrange(rt) %>% relocate(stimToResp, stimToNextResp) %>% 
+  summarize(stimToResp.max = max(stimToResp, na.rm=T), stimToNextResp.min = min(stimToNextResp, na.rm=T),
+            problem = stimToResp.max >= stimToNextResp.min)
 #max time to correct response: 1954 ms
 #min time to NEXT correct response: 2042 ms
-# => check for overlap
+# => problem if max response to current stimulus can be longer than min response to next stimulus
   
 # Impedances --------------------------------------------------------------
 files.eeg.headers = list.files(path.eeg.raw, pattern = ".vhdr", full.names = T)
