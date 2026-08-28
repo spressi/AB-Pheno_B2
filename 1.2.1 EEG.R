@@ -153,6 +153,7 @@ eeg.impedances = eeg.impedances.list %>% bind_rows(.id = "subject") %>%
 eeg.impedances %>% count(electrode, name = "files") %>% count(files, name = "electrodes")
 eeg.impedances %>% filter(impedance %>% is.na()) %>% pull(subject_session) %>% unique()
 eeg.impedances %>% filter(impedance == Inf)
+eeg.impedances %>% arrange(desc(impedance))
 
 ##impedance change before/after
 eeg.impedances.m = eeg.impedances %>% 
@@ -161,6 +162,7 @@ eeg.impedances.m = eeg.impedances %>%
             impedance = mean(impedance, na.rm=T)) %>% 
   pivot_wider(names_from = time, values_from = impedance)
 
-with(eeg.impedances.m, t.test(after, before, paired=T)) %>% apa::t_apa(es_ci=T)
+with(eeg.impedances.m, t.test(after, before, paired=T, alternative = "greater")) %>% apa::t_apa(es_ci=T)
 eeg.impedances.m %>% summarize(before.m = mean(before), before.sd = sd(before), 
                                after.m = mean(after), after.sd = sd(after))
+with(eeg.impedances.m, var.test(after, before, alternative = "greater"))
