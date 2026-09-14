@@ -39,13 +39,15 @@ eeg.markers = eeg.markers %>%
 eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% mutate(diff = n - markers.n) #%>% arrange(n)
 #a03: first 4 EOG calibration markers (3 trials) missing => use 2nd EOG for both blocks?
 #a10: first 2 EOG calibration markers (1 trial)  missing => use 2nd Center only for first block
-#b04: first EOG start marker missing (no problem) + 1 response missing???
-#b06: 2 targets missing + 1 response missing???
+#b04: first EOG start marker missing (no problem) + 1 response missing
+#b06: 2 targets missing + 1 response missing
 #b07: 2 targets missing
 #b08: 1 target  missing
 #b09: first 2 EOG calibration markers (1 trial)  missing => use 2nd Center only for first block
 #b11: 2 targets missing
 #b13: 3 targets missing
+#b19: 2 targets missing
+#b20: 1 response missing
 
 #check missing markers
 eeg.markers %>% count(subject, value) %>% 
@@ -58,7 +60,7 @@ eeg.markers %>% count(subject, value) %>%
   mutate(meaning = case_when(value == 200 ~ "Block Start", value == 201 ~ "Block End",
                              value == 210 ~ "EOG Start", value == 211 ~ "EOG Center", value == 212 ~ "EOG Top", value == 213 ~ "EOG Right", value == 214 ~ "EOG Bottom", value == 215 ~ "EOG Left", value == 220 ~ "EOG End",
                              value %% 10 <= 2 ~ "distractor",
-                             value %% 10 >= 4 ~ "target"))
+                             value %% 10 >= 4 ~ "target")) %>% print(n = nrow(.))
 #note: target markers will be skipped if a response is premature, cf.
 #behavior %>% filter(expositionCheck %>% is.na())
 
@@ -116,8 +118,8 @@ eeg.markers.wide %>%
   ) %>% arrange(rt) %>% relocate(stimToResp, stimToNextResp) %>% 
   summarize(stimToResp.max = max(stimToResp, na.rm=T), stimToNextResp.min = min(stimToNextResp, na.rm=T),
             problem = stimToResp.max >= stimToNextResp.min)
-#max time to correct response: 1954 ms
-#min time to NEXT correct response: 2042 ms
+#max time to correct response: 2002 ms
+#min time to NEXT correct response: 2034 ms
 # => problem if max response to current stimulus can be longer than min response to next stimulus
   
 # Impedances --------------------------------------------------------------
