@@ -164,7 +164,10 @@ behavior %>% summarize(.by = c(subject, paradigm),
 behavior %>% mutate(expositionCheck = round(expositionCheck)) %>% count(SOA, expositionCheck) #%>% filter(expositionCheck %in% poststim == F)
 frameSkip = behavior %>% select(subject, block:rt, SOA, expositionCheck) %>% 
   mutate(diff = expositionCheck - SOA) %>% pull(diff) %>% {. / screen.ms}
-hist(frameSkip); summary(frameSkip)
+#hist(frameSkip, freq=F); summary(frameSkip)
+#ggplot(tibble(frameSkip = frameSkip), aes(x = frameSkip)) + geom_histogram(aes(y = stat(density)), binwidth = 1, center = 1, color = "black", fill = "grey") + myGgTheme
+#frameSkip %>% round(1) %>% unique()
+tibble(frameSkip = frameSkip %>% round(0)) %>% count(frameSkip) %>% mutate(p = n / sum(n))
 #at least 1 frame is skipped, rarely 2
 
 #response coding
