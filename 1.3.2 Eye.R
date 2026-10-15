@@ -633,7 +633,7 @@ fixations.distractors = fixations %>%
 
 
 # Overall Check -----------------------------------------------------------
-fixations %>% select(subject, trial) %>% unique() %>% count(subject) %>% filter(n != trials.N)
+fixations %>% select(subject, trial) %>% unique() %>% count(subject) %>% filter(n != trials.N) %>% mutate(diff = n - trials.N) %>% arrange(desc(abs(diff)))
 fixations %>% summarize(.by = subject, min = min(trial), max = max(trial), n = max - min + 1) %>% filter(min != 1 | max != trials.N)
 
 accuracy.long = accuracy %>% pivot_longer(starts_with("accuracy"), names_to = "coordinate", values_to = "inaccuracy") %>% 
