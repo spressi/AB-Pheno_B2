@@ -63,7 +63,7 @@ eeg.markers %>% count(subject, value) %>%
                              value >= 200 & n == 2 ~ T, #all other EOG
                              n %in% c(8, 16) ~ T, #could differentiate: a needs 8 for target markers, b 16 throughout
                              T ~ F)) %>% 
-  filter(correct == F) %>% 
+  filter(correct == F) %>% select(-correct) %>% 
   mutate(meaning = case_when(value == 200 ~ "Block Start", value == 201 ~ "Block End",
                              value == 210 ~ "EOG Start", value == 211 ~ "EOG Center", value == 212 ~ "EOG Top", value == 213 ~ "EOG Right", value == 214 ~ "EOG Bottom", value == 215 ~ "EOG Left", value == 220 ~ "EOG End",
                              value %% 10 <= 2 ~ "distractor",
@@ -90,7 +90,7 @@ eeg.markers %>%
          samplediff = sample-lag(sample)) %>% 
   #filter(samplediff == min(samplediff, na.rm=T)) %>% 
   filter(samplediff < 50) %>% 
-  left_join(sequences %>% select(subject, trial, SOA, iti)) #premature response within the first 100 ms => shorter than a normal 100 ms trial :(
+  left_join(sequences %>% select(subject, trial, SOA, iti)) #premature response within the first 100 ms of distractor presentation => shorter than a normal 100 ms trial :(
 
 
 # * Long Format -----------------------------------------------------------
@@ -162,7 +162,7 @@ eeg.impedances = eeg.impedances.list %>% bind_rows(.id = "subject") %>%
 eeg.impedances %>% count(electrode, name = "files") %>% count(files, name = "electrodes")
 eeg.impedances %>% filter(impedance %>% is.na()) %>% pull(subject_session) %>% unique()
 eeg.impedances %>% filter(impedance == Inf)
-eeg.impedances %>% arrange(desc(impedance))
+eeg.impedances %>% filter(impedance != Inf) %>% arrange(desc(impedance))
 
 ##impedance change before/after
 eeg.impedances.m = eeg.impedances %>% 
@@ -173,5 +173,5 @@ eeg.impedances.m = eeg.impedances %>%
 
 with(eeg.impedances.m, t.test(after, before, paired=T, alternative = "greater")) %>% apa::t_apa(es_ci=T)
 eeg.impedances.m %>% summarize(before.m = mean(before), before.sd = sd(before), 
-                               after.m = mean(after), after.sd = sd(after))
+                               after.m = mean(after, na.rm=T), after.sd = sd(after, na.rm=T))
 with(eeg.impedances.m, var.test(after, before, alternative = "greater"))
