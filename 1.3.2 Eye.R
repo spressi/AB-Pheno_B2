@@ -737,6 +737,9 @@ fixations.valid %>% ggplot(aes(x = x, fill = ROI.side)) +
   #geom_vline(xintercept = c(-indifference.zone, +indifference.zone) + screen.width/2, linetype = "dashed", color = "red") +
   myGgTheme
 
+# number of trials where each subject looked into at least 1 ROI (may be overlapping fixation of previous trial)
+#fixations.valid %>% filter(ROI.side %>% is.na() == F) %>% count(subject) %>% arrange(n)
+
 fixations.first = fixations.valid %>% 
   filter(start > 0, 
          #end < SOA, #100 ms SOA is too short for a saccade => also count saccades after face offset (despite strong confound with target)
@@ -748,6 +751,9 @@ fixations.first = fixations.valid %>%
             firstDwell.angry = mean(firstDwell=="angry", na.rm=T)) %>% 
   arrange(subject, paradigm, SOA, angry) #%>% mutate(SOA = SOA %>% as_factor())
 
+# number of trials where each subject looked into at least 1 ROI after initial fixation
+fixations.first %>% count(subject) %>% arrange(n)
+fixations.first %>% count(subject) %>% summarize(mean = mean(n), sd = sd(n))
 
 #TODO proceed here & move to separate analysis script
 # Statistical Analysis ----------------------------------------------------
