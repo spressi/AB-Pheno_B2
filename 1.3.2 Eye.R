@@ -581,9 +581,9 @@ messages %>% count(subject) %>% filter(n != trials.N, subject %in% {behavior.ove
 #all missings were manually compared against sequence files to assure trial number is correct
 
 #messages %>% pull(time) %>% summary()
-messages %>% pull(time) %>% quantile(c(0, 0.001, 0.002, 0.003, 0.004), na.rm=T) #very small percentage of weird message timing
-messages %>% filter(time < 900)
-#messages %>% filter(time < 900) %>% pull(time) %>% hist()
+messages %>% pull(time) %>% quantile(c(0, 0.001, 0.002, 0.003, 0.004, .5), na.rm=T) #very small percentage of weird message timing
+messages %>% filter(time < 800)
+#messages %>% filter(time < 800) %>% pull(time) %>% hist()
 #Checked the raw data: Before problematic message, eyes had not been detected for longer time
 # => tracker went into stand-by (?) and did not write further timestamps with missing data
 # ==> message timing tells how long before stimulus onset, valid eye-tracking data are existent
