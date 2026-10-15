@@ -550,7 +550,7 @@ library("DescTools")
 # Load Data ---------------------------------------------------------------
 #behavior.valid = read_rds("behavior.valid.rds" %>% paste0(path.rds, .))
 messages = "Messages.txt" %>% paste0(path.eye, .) %>% 
-  read_delim(delim="\t", locale=locale(decimal_mark=","), na=".", show_col_types=F) %>% #read.table(filePath, skip=1, dec=",", sep="\t", na.strings=".")
+  read_delim(delim="\t", locale=locale(decimal_mark=","), na=c("NA", "."), show_col_types=F) %>% #read.table(filePath, skip=1, dec=",", sep="\t", na.strings=".")
   rename(subject = RECORDING_SESSION_LABEL, trial = TRIAL_LABEL, time = CURRENT_MSG_TIME, event = CURRENT_MSG_TEXT) %>% 
   separate("subject", c("subject", "block"), sep = "_")
 
