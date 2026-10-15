@@ -24,7 +24,9 @@ eeg.markers = eeg.markers.list %>% bind_rows(.id = "subject") %>% tibble() %>%
                           value %in% c(88, 99) ~ "response",
                           value %% 10 <= 2 ~ "distractor",
                           value %% 10 >= 4 ~ "target"),
-         paradigm = if_else(subject %>% str_detect("a"), "Discrimination", "Localization"))
+         paradigm = if_else(subject %>% str_detect("a"), "Discrimination", "Localization")) %>% 
+  mutate(.by = subject, markerNum = 1:n()) %>% 
+  mutate(.by = c(subject, value), markerKindNum = 1:n())
 
 #trials
 eeg.markers = eeg.markers %>% 
@@ -34,6 +36,11 @@ eeg.markers = eeg.markers %>%
   #group_by(subject) %>% fill(trial, .direction = "down") %>% ungroup() %>% 
   fill(trial, .direction = "down") %>% mutate(trial = if_else(kind == "extra", NA, trial))
 
+#check extra markers of b22
+# eeg.markers %>% filter(subject == "b22", value == 210)
+# eeg.markers %>% filter(subject == "b22", markerNum %in% {875 - 0:5})
+# eeg.markers %>% filter(subject == "b22", markerNum %in% {1131 - 0:5})
+eeg.markers = eeg.markers %>% filter((subject == "b22" & markerNum %in% {875:1130}) == F) #TODO use filter_out instead
 
 # * Missing Markers -------------------------------------------------------
 eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% mutate(diff = n - markers.n) #%>% arrange(n)
