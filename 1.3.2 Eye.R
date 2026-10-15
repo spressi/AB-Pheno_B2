@@ -634,6 +634,7 @@ fixations.distractors = fixations %>%
 
 # Overall Check -----------------------------------------------------------
 fixations %>% select(subject, trial) %>% unique() %>% count(subject) %>% filter(n != trials.N) %>% mutate(diff = n - trials.N) %>% arrange(desc(abs(diff)))
+#note: a24 & b22 will be sorted out be invalid baselines
 fixations %>% summarize(.by = subject, min = min(trial), max = max(trial), n = max - min + 1) %>% filter(min != 1 | max != trials.N)
 
 accuracy.long = accuracy %>% pivot_longer(starts_with("accuracy"), names_to = "coordinate", values_to = "inaccuracy") %>% 
@@ -754,6 +755,7 @@ fixations.first = fixations.valid %>%
 # number of trials where each subject looked into at least 1 ROI after initial fixation
 fixations.first %>% count(subject) %>% arrange(n)
 fixations.first %>% count(subject) %>% summarize(mean = mean(n), sd = sd(n))
+#TODO this is super few trials :/
 
 #TODO proceed here & move to separate analysis script
 # Statistical Analysis ----------------------------------------------------

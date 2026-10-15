@@ -55,6 +55,10 @@ eeg.markers %>% count(subject) %>% filter(n != markers.n) %>% mutate(diff = n - 
 #b13: 3 targets missing
 #b19: 2 targets missing
 #b20: 1 response missing
+#b21: 1 target missing
+#b22: block 2 restarted (amended by manual filter)
+#b23: 1 target missing
+#b25: 1 target missing
 
 #check missing markers
 eeg.markers %>% count(subject, value) %>% 
@@ -126,8 +130,12 @@ eeg.markers.wide %>%
   summarize(stimToResp.max = max(stimToResp, na.rm=T), stimToNextResp.min = min(stimToNextResp, na.rm=T),
             problem = stimToResp.max >= stimToNextResp.min)
 #max time to correct response: 2002 ms
-#min time to NEXT correct response: 2034 ms
+#min time to NEXT correct response: 1774 ms
 # => problem if max response to current stimulus can be longer than min response to next stimulus
+
+eeg.markers.wide %>% filter(stimToNextResp < 2002) %>% select(-starts_with("sample_"), -value_distractor, -value_target)
+#eeg.markers.wide %>% filter(stimToResp >= 1968) %>% select(-starts_with("sample_"), -value_distractor, -value_target)
+#TODO work on overlap problem (i.e., discard subjects or improve EEG selection of correct trials)
   
 # Impedances --------------------------------------------------------------
 files.eeg.headers = list.files(path.eeg.raw, pattern = ".vhdr", full.names = T)
