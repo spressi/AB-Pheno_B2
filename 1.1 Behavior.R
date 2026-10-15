@@ -173,6 +173,8 @@ tibble(frameSkip = frameSkip %>% round(0)) %>% count(frameSkip) %>% mutate(p = n
 #response coding
 #behavior %>% ggplot(aes(x = response, fill = paradigm)) + geom_histogram(stat = "count", color = "black") + facet_wrap(~paradigm, scales = "free")
 
+#b24 felt unwell at the end of the experiment. Check data:
+#behavior %>% filter(subject == "b24", response %>% is.na()) #automatic exclusion of last 16 trials seems sufficient
 
 behavior.valid = behavior %>% filter(response %>% is.na() == F,
                                      expositionCheck %>% is.na() == F,
