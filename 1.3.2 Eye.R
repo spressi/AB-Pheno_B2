@@ -709,12 +709,16 @@ baselines.summary %>% summarize(.by = block, totalN = n(), includedN = sum(inclu
 baselines.summary %>% filter(included==F)
 
 baselines.summary %>% summarize(.by = subject, invalid = mean(invalid)) %>% arrange(desc(invalid))
-baselines.summary %>% group_by(subject) %>% summarize(invalid = mean(invalid)) %>% 
-  filter(invalid < outlierLimit.eye) %>% summarize(invalid.m = mean(invalid), invalid.sd = sd(invalid))
 
+baselines.summary.all = baselines.summary %>% group_by(subject) %>% summarize(invalid = mean(invalid))
+exclusions.eye = baselines.summary.all %>% filter(invalid >= outlierLimit.eye) %>% pull(subject) %>% c(exclusions.eye, .)
+
+baselines.summary.retained = baselines.summary.all %>% filter(invalid < outlierLimit.eye)
+baselines.summary.retained %>% summarize(invalid.m = mean(invalid), invalid.sd = sd(invalid))
 
 # ROI analysis ------------------------------------------------------------
 fixations.valid = fixations.valid %>% 
+  filter(subject %in% exclusions.eye == F) %>% #TODO use filter_out
   mutate(ROI.side = case_when(x <= screen.width/2 - indifference.zone ~ "left",
                               x >= screen.width/2 + indifference.zone ~ "right",
                               T ~ NA),
